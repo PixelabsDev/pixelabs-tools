@@ -33,10 +33,9 @@
   <main>
     <div class="container">
 
-      <div class="tool-search" style="margin: 0 0 6px; position: relative;">
-        <input type="search" id="tool-search" placeholder="Search 30 tools… (e.g. pdf, audio, hash)" autocomplete="off"
-               style="width:100%; padding:14px 46px 14px 18px; border-radius:14px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:1rem; outline:none;" aria-label="Search tools">
-        <span style="position:absolute; right:16px; top:50%; transform:translateY(-50%); color:var(--text-2); pointer-events:none;">⌕</span>
+      <div class="tool-search">
+        <input type="search" id="tool-search" class="tool-search-input" placeholder="Search 30 tools… (e.g. pdf, audio, hash)" autocomplete="off" aria-label="Search tools">
+        <span class="tool-search-icon" aria-hidden="true">⌕</span>
       </div>
 
       <section class="hero">
@@ -344,26 +343,42 @@
   <script>
   (function () {
     var input = document.getElementById("tool-search");
-    var cards = Array.prototype.slice.call(document.querySelectorAll(".tool-card"));
-    var sections = Array.prototype.slice.call(document.querySelectorAll(".section-title, .tool-grid"));
+    if (!input) return;
+    var grids = Array.prototype.slice.call(document.querySelectorAll(".tool-grid"));
+    var titles = Array.prototype.slice.call(document.querySelectorAll(".section-title"));
+    var container = document.querySelector("main .container");
     var empty = null;
+
     input.addEventListener("input", function () {
       var q = input.value.trim().toLowerCase();
-      var any = false;
-      cards.forEach(function (c) {
-        var hit = !q || c.textContent.toLowerCase().indexOf(q) > -1;
-        c.style.display = hit ? "" : "none";
-        if (hit) any = true;
+      var totalMatches = 0;
+
+      grids.forEach(function (grid, idx) {
+        var cards = grid.querySelectorAll(".tool-card");
+        var visibleInGrid = 0;
+        cards.forEach(function (c) {
+          var hit = !q || c.textContent.toLowerCase().indexOf(q) > -1;
+          c.style.display = hit ? "" : "none";
+          if (hit) {
+            visibleInGrid++;
+            totalMatches++;
+          }
+        });
+        grid.style.display = visibleInGrid > 0 ? "" : "none";
+        if (titles[idx]) titles[idx].style.display = visibleInGrid > 0 ? "" : "none";
       });
-      sections.forEach(function (s) { s.style.display = ""; });
-      if (!empty) {
-        empty = document.createElement("p");
-        empty.className = "muted center";
-        empty.style.padding = "30px 0";
+
+      if (!empty && container) {
+        empty = document.createElement("div");
+        empty.className = "msg info center";
+        empty.style.margin = "40px auto 60px";
+        empty.style.maxWidth = "440px";
         empty.textContent = "No tools match your search.";
-        empty.parentNode = document.querySelector(".tool-grid").parentNode.appendChild(empty);
+        container.appendChild(empty);
       }
-      empty.style.display = any ? "none" : "block";
+      if (empty) {
+        empty.style.display = (totalMatches === 0 && q) ? "block" : "none";
+      }
     });
   })();
   </script>

@@ -187,6 +187,7 @@
         var b = document.createElement("button");
         b.textContent = txt;
         b.title = title;
+        b.setAttribute("aria-label", title);
         b.addEventListener("click", fn);
         return b;
       }

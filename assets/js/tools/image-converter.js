@@ -103,6 +103,7 @@
       controls.className = "controls";
       var del = document.createElement("button");
       del.title = "Remove";
+      del.setAttribute("aria-label", "Remove " + item.file.name);
       del.textContent = "✕";
       del.addEventListener("click", function () {
         if (item.url) URL.revokeObjectURL(item.url);

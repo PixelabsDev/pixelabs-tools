@@ -4,30 +4,46 @@
 "use strict";
 
 /* ---------- Theme ---------- */
-(function initTheme() {
-  const stored = localStorage.getItem("pat-theme");
-  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-  if (stored === "dark" || (!stored && prefersDark)) document.documentElement.classList.add("dark");
-})();
+function updateThemeButtons() {
+  var isDark = document.documentElement.classList.contains("dark");
+  document.querySelectorAll(".theme-toggle").forEach(function (btn) {
+    btn.textContent = isDark ? "☀️" : "🌙";
+    var label = isDark ? "Switch to light theme" : "Switch to dark theme";
+    btn.title = label;
+    btn.setAttribute("aria-label", label);
+  });
+}
 
-/* ---------- Device tier ----------
-   On low-memory / few-core devices (typical budget Android phones),
-   drop the expensive glass-blur effects by adding .low-power to <html>.
-   The design stays the same, the compositing cost disappears. */
-(function () {
-  try {
-    var mem = navigator.deviceMemory || 0;
-    var cores = navigator.hardwareConcurrency || 0;
-    if ((mem && mem <= 2) || (cores && cores <= 2)) {
-      document.documentElement.classList.add("low-power");
-    }
-  } catch (e) { /* never block the page */ }
+(function initTheme() {
+  var stored = localStorage.getItem("pat-theme");
+  var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  if (stored === "dark" || (!stored && prefersDark)) {
+    document.documentElement.classList.add("dark");
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", updateThemeButtons);
+  } else {
+    updateThemeButtons();
+  }
+
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function (e) {
+      if (!localStorage.getItem("pat-theme")) {
+        if (e.matches) document.documentElement.classList.add("dark");
+        else document.documentElement.classList.remove("dark");
+        updateThemeButtons();
+        window.dispatchEvent(new CustomEvent("pat-theme-change", { detail: { dark: e.matches } }));
+      }
+    });
+  }
 })();
 
 function toggleTheme() {
-  const root = document.documentElement;
-  const dark = root.classList.toggle("dark");
+  var root = document.documentElement;
+  var dark = root.classList.toggle("dark");
   localStorage.setItem("pat-theme", dark ? "dark" : "light");
+  updateThemeButtons();
+  window.dispatchEvent(new CustomEvent("pat-theme-change", { detail: { dark: dark } }));
 }
 
 /* ---------- Service worker (PWA / offline) ----------
@@ -210,9 +226,22 @@ function makeDropzone(opts) {
     if (files.length) opts.onFiles(files);
   }
 
+  el.setAttribute("tabindex", "0");
+  el.setAttribute("role", "button");
+  if (!el.getAttribute("aria-label")) {
+    var titleEl = el.querySelector(".dz-title");
+    if (titleEl) el.setAttribute("aria-label", titleEl.textContent.trim());
+  }
+
   el.addEventListener("click", function (e) {
     if (e.target === input) return;
     input.click();
+  });
+  el.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      input.click();
+    }
   });
   input.addEventListener("change", function () {
     handleFiles(input.files);

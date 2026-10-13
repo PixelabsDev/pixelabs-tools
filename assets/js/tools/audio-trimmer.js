@@ -138,17 +138,20 @@
     var b = Math.max(sel.a, sel.b);
     var ax = (a / buffer.duration) * cssW;
     var bx = (b / buffer.duration) * cssW;
+    var isDark = document.documentElement.classList.contains("dark");
+    var activeColor = isDark ? "#818cf8" : "#4f46e5";
+    var dimColor = isDark ? "rgba(148, 163, 184, 0.40)" : "rgba(100, 116, 139, 0.45)";
 
     /* waveform — selected part in accent, rest dimmed */
     for (var i = 0; i < peaks.length; i++) {
       var t = (i / peaks.length) * buffer.duration;
-      g.fillStyle = (t >= a && t <= b) ? "#818cf8" : "rgba(130,140,165,.45)";
+      g.fillStyle = (t >= a && t <= b) ? activeColor : dimColor;
       var h = Math.max(1, peaks[i] * (cssH / 2 - 6));
       g.fillRect(i, mid - h, 1, h * 2);
     }
 
     /* veil over the parts that will be cut away */
-    g.fillStyle = "rgba(10,13,21,.30)";
+    g.fillStyle = isDark ? "rgba(0, 0, 0, 0.60)" : "rgba(15, 23, 42, 0.20)";
     if (ax > 0) g.fillRect(0, 0, ax, cssH);
     if (bx < cssW) g.fillRect(bx, 0, cssW - bx, cssH);
 
@@ -158,7 +161,7 @@
       if (pt >= b) { playInfo = null; }
       else {
         var px = (pt / buffer.duration) * cssW;
-        g.fillStyle = "#22c55e";
+        g.fillStyle = isDark ? "#4ade80" : "#16a34a";
         g.fillRect(px - 1, 0, 2, cssH);
         g.beginPath();
         g.moveTo(px - 6, 0); g.lineTo(px + 6, 0); g.lineTo(px, 8); g.closePath();
@@ -169,8 +172,8 @@
 
     /* fat, touch-friendly handles */
     function handle(x, active) {
-      g.fillStyle = "#6366f1";
-      if (active) { g.shadowColor = "rgba(99,102,241,.55)"; g.shadowBlur = 10; }
+      g.fillStyle = isDark ? "#818cf8" : "#4f46e5";
+      if (active) { g.shadowColor = "rgba(99,102,241,.65)"; g.shadowBlur = 12; }
       roundRect(g, x - 6, 1, 12, cssH - 2, 6);
       g.shadowBlur = 0;
       g.fillStyle = "#fff";
@@ -188,14 +191,23 @@
       g.font = "600 12px Inter, system-ui, sans-serif";
       var tw = g.measureText(label).width + 16;
       var bxx = Math.max(2, Math.min(cssW - tw - 2, x - tw / 2));
-      g.fillStyle = "#101527";
+      g.fillStyle = isDark ? "#1e293b" : "#0f172a";
       roundRect(g, bxx, 3, tw, 20, 8);
+      if (isDark) {
+        g.strokeStyle = "rgba(255, 255, 255, 0.22)";
+        g.lineWidth = 1;
+        g.stroke();
+      }
       g.fillStyle = "#fff";
       g.textAlign = "left";
       g.textBaseline = "middle";
       g.fillText(label, bxx + 8, 14);
     }
   }
+
+  window.addEventListener("pat-theme-change", function () {
+    if (buffer) draw();
+  });
 
   function syncInputs() {
     var a = Math.min(sel.a, sel.b), b = Math.max(sel.a, sel.b);

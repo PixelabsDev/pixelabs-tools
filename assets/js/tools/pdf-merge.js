@@ -77,6 +77,7 @@
         .forEach(function (b) {
           var btn = document.createElement("button");
           btn.title = b[1];
+          btn.setAttribute("aria-label", b[1] + ": " + item.file.name);
           btn.textContent = b[0];
           btn.addEventListener("click", b[2]);
           controls.appendChild(btn);
