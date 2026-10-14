@@ -12,6 +12,14 @@
 
   var state = { file: null, pageCount: 0, total: 0, links: 0 };
 
+  /* A provenance marker. Every PDF tool already stamps its own name here
+     (pdf-lib writes "pdf-lib", pypdf writes "pypdf"), so this simply puts
+     our name there instead — and says where the work happened, which is the
+     part that actually matters for a file someone has cleaned. It is a plain
+     metadata field, so any metadata remover strips it again. */
+  var CREATOR = "PixelAbs Tools";
+  var PRODUCER_LOCAL = "PixelAbs Tools - PDF Link Remover (browser)";
+
   var els = {
     dropzone: document.getElementById("dropzone"),
     editor: document.getElementById("editor"),
@@ -312,6 +320,8 @@
       }
 
       var result = strip(doc, mode);
+      doc.setCreator(CREATOR);
+      doc.setProducer(PRODUCER_LOCAL);
       var bytes = await doc.save();
 
       if (!looksLikePdf(bytes)) {
