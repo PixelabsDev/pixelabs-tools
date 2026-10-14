@@ -76,6 +76,7 @@
   /* Count annotations, and how many of them are links. */
   function survey(doc) {
     var total = 0, links = 0;
+    var pages = doc.getPageCount();
     doc.getPages().forEach(function (page) {
       var arr = annotsOf(page);
       if (!arr) return;
@@ -84,7 +85,7 @@
         if (subtypeOf(doc.context, arr.get(i)) === "Link") links++;
       }
     });
-    return { total: total, links: links };
+    return { total: total, links: links, pages: pages };
   }
 
   /* Strip annotations in place. mode: "links" | "all". */
@@ -150,6 +151,36 @@
     return PDFDocument.load(buf);
   }
 
+  /* A throwaway read, used only to describe a protected file to the reader.
+     In an encrypted PDF the structure — page tree, /Annots, /Subtype — is
+     not encrypted, only the streams are, so walking it with ignoreEncryption
+     gives the right page and link counts. The object is then thrown away and
+     never saved, because saving is exactly what produced the unopenable
+     file in the first place. */
+  async function peekProtected(buf) {
+    try {
+      var doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+      return survey(doc);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /* "502 pages · 24.0 MB · found 1490 links" — shared by both paths. */
+  function describe(file, found, extra) {
+    var bits = "<b>" + escapeHtml(file.name) + "</b> — " + found.pages +
+      " page" + (found.pages === 1 ? "" : "s") + " · " + formatBytes(file.size);
+    if (found.total === 0) {
+      bits += " · <b>no links or annotations found</b>";
+    } else {
+      bits += " · found <b>" + found.links + "</b> link" + (found.links === 1 ? "" : "s");
+      var others = found.total - found.links;
+      if (others > 0) bits += " and <b>" + others + "</b> other annotation" + (others === 1 ? "" : "s");
+    }
+    if (extra) bits += " · " + extra;
+    return bits;
+  }
+
   /* A last line of defence: never hand back a file we cannot vouch for.
      A valid PDF ends with %%EOF and carries a /Root reference. If either is
      missing the bytes are truncated or half-written — the kind of file that
@@ -189,7 +220,17 @@
       try {
         doc = await openPdf(buf);
       } catch (err) {
-        if (isProtected(err)) { showProtected(); return; }
+        if (isProtected(err)) {
+          var peek = await peekProtected(buf);
+          if (peek) {
+            state.pageCount = peek.pages;
+            state.total = peek.total;
+            state.links = peek.links;
+            els.docInfo.innerHTML = describe(file, peek, "<b>protected</b>");
+          }
+          showProtected();
+          return;
+        }
         throw err;
       }
       var found = survey(doc);
@@ -198,17 +239,8 @@
       state.total = found.total;
       state.links = found.links;
 
-      var bits = "<b>" + escapeHtml(file.name) + "</b> — " + state.pageCount +
-        " page" + (state.pageCount === 1 ? "" : "s") + " · " + formatBytes(file.size);
       els.editor.classList.remove("hidden");
-      if (found.total === 0) {
-        bits += " · <b>no links or annotations found</b>";
-      } else {
-        bits += " · found <b>" + found.links + "</b> link" + (found.links === 1 ? "" : "s");
-        var others = found.total - found.links;
-        if (others > 0) bits += " and <b>" + others + "</b> other annotation" + (others === 1 ? "" : "s");
-      }
-      els.docInfo.innerHTML = bits;
+      els.docInfo.innerHTML = describe(file, found);
 
       els.editor.scrollIntoView({ behavior: "smooth", block: "start" });
       showMsg("", "");
