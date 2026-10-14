@@ -62,6 +62,40 @@ const RENDER_DEFAULT = "https://api.pixelabs.in";
    variable at a different host to move it — nothing else changes. */
 const MODERATION_DEFAULT = "https://moderation.pixelabs.in";
 
+const VENDOR_FALLBACK = {
+  "/assets/vendor/pdf-lib.min.js": ["https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js",
+    "0f9a5cad07941f0826586c94e089d89b918c46e5c17cf2d5a3c6f666e3bc694f",
+    "application/javascript; charset=utf-8"],
+  "/assets/vendor/jszip.min.js": ["https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
+    "acc7e41455a80765b5fd9c7ee1b8078a6d160bbbca455aeae854de65c947d59e",
+    "application/javascript; charset=utf-8"],
+  "/assets/vendor/qrcode.min.js": ["https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js",
+    "c541ef06327885a8415bca8df6071e14189b4855336def4f36db54bde8484f36",
+    "application/javascript; charset=utf-8"],
+  "/assets/vendor/pdf.min.js": ["https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.min.js",
+    "978fd1b2d134a98e98966186a97777bebf87d8e770dadab1ece3687e21a5aa6c",
+    "application/javascript; charset=utf-8"],
+  "/assets/vendor/pdf.worker.min.js": ["https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.worker.min.js",
+    "38cde5311957b86bc3669f93e7d2566de333a90055ed6635bef60d9bf00e96f2",
+    "application/javascript; charset=utf-8"],
+  "/assets/vendor/papaparse.min.js": ["https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js",
+    "b8e870c5d2b29772f10c9fa9a693c8b896aac8540ed6701e3cc6304c683febdb",
+    "application/javascript; charset=utf-8"],
+  "/assets/vendor/gif.js": ["https://cdn.jsdelivr.net/gh/jnordberg/gif.js@master/dist/gif.js",
+    "a8b111071bb3b123c302e6182c01d6b3550f93a4b627398b07c46875d84090bb",
+    "application/javascript; charset=utf-8"],
+  "/assets/vendor/gif.worker.js": ["https://cdn.jsdelivr.net/gh/jnordberg/gif.js@master/dist/gif.worker.js",
+    "ca9e3048557ec05d619e18b83403cd3669c88939e5fa2d6034ce7625d445970d",
+    "application/javascript; charset=utf-8"],
+  "/assets/fonts/InterVariable.woff2": ["https://unpkg.com/@fontsource-variable/inter@5.2.5/files/inter-latin-wght-normal.woff2",
+    "f052ee44c3728dfd23aba8a4567150bc314d23903026fbb6ad089422c2df56af",
+    "font/woff2"],
+  "/assets/vendor/exifr.full.umd.js": ["https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js",
+    "2bd05117781c12ddd965dee846de3b3f986b5ecb4c7f6a78f2d2ec1db7c65ae7",
+    "application/javascript; charset=utf-8"],
+};
+
+
 /* Only these backend endpoints may be proxied — keeps the worker
    from being usable as a general-purpose proxy. */
 const BACKEND_PATHS = [
@@ -559,6 +593,43 @@ export default {
     ) {
       const mdRes = await serveMarkdown(env, url);
       if (mdRes) return mdRes;
+    }
+
+    /* ---------- /assets/vendor/* — guaranteed pinned libraries ----------
+       build.sh downloads these at build time and verifies each sha256. If a
+       build ever ships without them (a build command that does not run
+       build.sh, say), the file is fetched once from the same pinned source
+       the build uses, checked against the same sha256, and cached at the
+       edge, so the tools keep working. Once the build ships them, this
+       branch just serves the real asset and costs nothing.
+       Keep this list in step with build.sh. */
+    if (request.method === "GET" && VENDOR_FALLBACK[url.pathname]) {
+      const pinned = VENDOR_FALLBACK[url.pathname];
+      if (env && env.ASSETS && typeof env.ASSETS.fetch === "function") {
+        const real = await env.ASSETS.fetch(new URL(url.pathname, url).toString());
+        if (real.status === 200) return real;
+      }
+      const cache = caches.default;
+      const key = new Request(url.toString(), { method: "GET" });
+      const hit = await cache.match(key);
+      if (hit) return hit;
+      const up = await fetch(pinned[0], { cf: { cacheTtl: 31536000, cacheEverything: true } });
+      if (!up.ok) return json({ ok: false, error: "vendor library unavailable" }, 502);
+      const bytes = await up.arrayBuffer();
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      const hex = Array.from(new Uint8Array(digest))
+        .map(function (n) { return n.toString(16).padStart(2, "0"); }).join("");
+      if (hex !== pinned[1]) {
+        return json({ ok: false, error: "vendor library checksum mismatch" }, 502);
+      }
+      const out = new Response(bytes, {
+        headers: {
+          "Content-Type": pinned[2],
+          "Cache-Control": "public, max-age=31536000, immutable"
+        }
+      });
+      await cache.put(key, out.clone());
+      return out;
     }
 
     /* Serve the homepage at "/" without any redirect.
