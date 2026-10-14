@@ -139,6 +139,31 @@
     return PDFDocument.load(buf);
   }
 
+  /* A last line of defence: never hand back a file we cannot vouch for.
+     A valid PDF ends with %%EOF and carries a /Root reference. If either is
+     missing the bytes are truncated or half-written — the kind of file that
+     opens as "Can't open PDF". Discard it and say so, rather than saving it. */
+  function bytesToStr(bytes, from, to) {
+    var out = "";
+    for (var i = from; i < to; i++) out += String.fromCharCode(bytes[i]);
+    return out;
+  }
+
+  function looksLikePdf(bytes) {
+    if (!bytes || bytes.length < 200) return false;
+    var tail = bytesToStr(bytes, Math.max(0, bytes.length - 2048), bytes.length);
+    if (tail.indexOf("%%EOF") === -1) return false;
+    var head = bytesToStr(bytes, 0, Math.min(bytes.length, 4096));
+    var end = bytesToStr(bytes, Math.max(0, bytes.length - 8192), bytes.length);
+    return (head + end).indexOf("/Root") !== -1;
+  }
+
+  var BROKEN_MSG = "Something went wrong while writing the file, and the result " +
+    "would not open — so it has been discarded rather than saved. Some PDFs are " +
+    "too complex for in-browser rewriting. Switch Processing to Cloud and try " +
+    "again: the server handles these properly, and the file is deleted as soon " +
+    "as the result comes back.";
+
   function load(file) {
     if (!file || (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name))) {
       toast("Please choose a PDF file.", "err");
@@ -200,6 +225,7 @@
       showMsg("Uploading… " + pct + "%", "info");
     }).then(function (res) {
       stop();
+      if (!looksLikePdf(res.bytes)) { showMsg(BROKEN_MSG, "err"); els.runBtn.disabled = false; return; }
       var blob = new Blob([res.bytes], { type: "application/pdf" });
       downloadBlob(blob, baseName(state.file.name) + "-clean.pdf");
       showMsg("Done! Cleaned on the server (" + formatBytes(blob.size) + ").", "ok");
@@ -231,6 +257,12 @@
 
       var result = strip(doc, mode);
       var bytes = await doc.save();
+
+      if (!looksLikePdf(bytes)) {
+        showMsg(BROKEN_MSG, "err");
+        els.runBtn.disabled = false;
+        return;
+      }
 
       var blob = new Blob([bytes], { type: "application/pdf" });
       downloadBlob(blob, baseName(state.file.name) + "-clean.pdf");
