@@ -115,13 +115,43 @@
 
   /* ================= loading ================= */
 
+  /* A PDF can be "protected": an owner password set, or a permissions lock
+     that forbids copying or editing. Banks, textbooks and downloaded forms
+     often ship this way, and they open normally — so nothing looks wrong.
+     pdf-lib cannot decrypt one, and if it is told to ignore the encryption
+     it will happily write out a file that no viewer can open. pypdf (the
+     Cloud path) does handle them, so the honest answer is to say so and let
+     the reader choose Cloud, rather than hand back a broken file. */
+  var PROTECTED_MSG = "This PDF is protected — it carries an owner password or a " +
+    "permissions lock, which question banks, textbooks and downloaded forms often " +
+    "have. It opens normally, but a browser cannot safely rewrite it: Local mode " +
+    "would hand you back a file that will not open. Switch Processing to Cloud " +
+    "above and try again — the server handles protected files properly, and the " +
+    "file is deleted as soon as the result comes back.";
+
+  function isProtected(err) {
+    return /encrypt/i.test(String((err && err.message) || err));
+  }
+
+  /* Load without ever ignoring encryption, so a protected file fails loudly
+     here instead of silently producing a broken one. */
+  async function openPdf(buf) {
+    return PDFDocument.load(buf);
+  }
+
   function load(file) {
     if (!file || (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name))) {
       toast("Please choose a PDF file.", "err");
       return;
     }
     readFileAsArrayBuffer(file).then(async function (buf) {
-      var doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+      var doc;
+      try {
+        doc = await openPdf(buf);
+      } catch (err) {
+        if (isProtected(err)) { showMsg(PROTECTED_MSG, "err"); toast("This PDF is protected — see the note below.", "err"); return; }
+        throw err;
+      }
       var found = survey(doc);
       state.file = file;
       state.pageCount = doc.getPageCount();
@@ -130,6 +160,7 @@
 
       var bits = "<b>" + escapeHtml(file.name) + "</b> — " + state.pageCount +
         " page" + (state.pageCount === 1 ? "" : "s") + " · " + formatBytes(file.size);
+      els.editor.classList.remove("hidden");
       if (found.total === 0) {
         bits += " · <b>no links or annotations found</b>";
       } else {
@@ -139,7 +170,6 @@
       }
       els.docInfo.innerHTML = bits;
 
-      els.editor.classList.remove("hidden");
       els.editor.scrollIntoView({ behavior: "smooth", block: "start" });
       showMsg("", "");
     }).catch(function (err) {
@@ -191,7 +221,13 @@
     try {
       showMsg(mode === "all" ? "Removing every annotation…" : "Removing links…", "info");
       var buf = await readFileAsArrayBuffer(state.file);
-      var doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+      var doc;
+      try {
+        doc = await openPdf(buf);
+      } catch (err) {
+        if (isProtected(err)) { showMsg(PROTECTED_MSG, "err"); els.runBtn.disabled = false; return; }
+        throw err;
+      }
 
       var result = strip(doc, mode);
       var bytes = await doc.save();
