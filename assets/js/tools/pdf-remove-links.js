@@ -19,6 +19,7 @@
     mode: document.getElementById("mode"),
     runBtn: document.getElementById("run-btn"),
     clearBtn: document.getElementById("clear-btn"),
+    toCloud: document.getElementById("to-cloud"),
     msg: document.getElementById("msg")
   };
 
@@ -129,6 +130,16 @@
     "above and try again — the server handles protected files properly, and the " +
     "file is deleted as soon as the result comes back.";
 
+  /* The explanation has to be somewhere the reader can see it: open the
+     panel first, and offer the one action that can actually finish the job. */
+  function showProtected() {
+    els.editor.classList.remove("hidden");
+    if (els.toCloud) els.toCloud.style.display = "inline-block";
+    showMsg(PROTECTED_MSG, "err");
+    els.editor.scrollIntoView({ behavior: "smooth", block: "start" });
+    toast("This PDF is protected — see the note below.", "err");
+  }
+
   function isProtected(err) {
     return /encrypt/i.test(String((err && err.message) || err));
   }
@@ -170,11 +181,15 @@
       return;
     }
     readFileAsArrayBuffer(file).then(async function (buf) {
+      /* Remember the file straight away: if it turns out to be protected,
+         Local mode cannot finish the job but Cloud still can, and the button
+         that offers it needs the file. */
+      state.file = file;
       var doc;
       try {
         doc = await openPdf(buf);
       } catch (err) {
-        if (isProtected(err)) { showMsg(PROTECTED_MSG, "err"); toast("This PDF is protected — see the note below.", "err"); return; }
+        if (isProtected(err)) { showProtected(); return; }
         throw err;
       }
       var found = survey(doc);
@@ -206,6 +221,15 @@
     state.file = null;
     els.editor.classList.add("hidden");
     els.msg.className = "msg";
+  });
+
+  if (els.toCloud) els.toCloud.addEventListener("click", function () {
+    if (!state.file) return;
+    if (procEl) procEl.value = "cloud";
+    updateProcNote();
+    els.toCloud.style.display = "none";
+    showMsg("Sending it to our server…", "info");
+    cloudRun();
   });
 
   els.runBtn.addEventListener("click", function () {
@@ -251,7 +275,7 @@
       try {
         doc = await openPdf(buf);
       } catch (err) {
-        if (isProtected(err)) { showMsg(PROTECTED_MSG, "err"); els.runBtn.disabled = false; return; }
+        if (isProtected(err)) { showProtected(); els.runBtn.disabled = false; return; }
         throw err;
       }
 
