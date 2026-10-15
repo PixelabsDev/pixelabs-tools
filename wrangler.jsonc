@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "pixelabs-tools",
+  "account_id": "9625fe01935fe2d1dd51d4165f237a99",
   "compatibility_date": "2026-09-01",
   "main": "worker.js",
   "assets": {
