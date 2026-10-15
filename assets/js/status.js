@@ -127,7 +127,7 @@
     var days = history.slice(-90);
     var html = days.map(function (h) {
       var m = meta(h.status);
-      return '<i class="' + m.bar + '" title="' + h.day + " \u2014 " + m.label + '"></i>';
+      return '<i class="' + m.bar + '" title="' + esc(h.day) + " \u2014 " + m.label + '"></i>';
     }).join("");
     return '<div class="bars" aria-hidden="true">' + html + "</div>" +
       '<div class="bars-scale"><span>' + days.length + " days ago</span><span>today</span></div>";
