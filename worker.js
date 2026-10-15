@@ -636,11 +636,19 @@ export default {
        html_handling is "none", so the root is not auto-mapped.
        NOTE: pass a plain URL string — constructing a Request from a
        navigation request (mode "navigate") throws a TypeError. */
-    if (request.method === "GET" && url.pathname === "/") {
+    if ((request.method === "GET" || request.method === "HEAD") && url.pathname === "/") {
       if (env && env.ASSETS && typeof env.ASSETS.fetch === "function") {
-        return withContentSignal(
+        const homepage = withContentSignal(
           await env.ASSETS.fetch(new URL("/index.html", url).toString())
         );
+        if (request.method === "HEAD") {
+          return new Response(null, {
+            status: homepage.status,
+            statusText: homepage.statusText,
+            headers: homepage.headers
+          });
+        }
+        return homepage;
       }
     }
 

@@ -40,8 +40,23 @@
   addRow();
 
   function domain() {
-    var d = els.domain.value.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
-    return d || "example.com";
+    var input = els.domain.value.trim();
+    if (!input) return "example.com";
+    if (/[\u0000-\u001f\u007f]/.test(input)) throw new Error("Enter a valid domain name.");
+    input = input.replace(/^https?:\/\//i, "").split(/[/?#]/, 1)[0];
+    if (!input || /[@:]/.test(input)) throw new Error("Enter a domain name without a username or port.");
+    var host;
+    try { host = new URL("https://" + input).hostname; }
+    catch (e) { throw new Error("Enter a valid domain name."); }
+    var labels = host.split(".");
+    if (host.length > 253 || labels.some(function (label) {
+      return !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(label);
+    })) throw new Error("Enter a valid domain name.");
+    return host;
+  }
+
+  function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
   function rows() {
@@ -49,7 +64,25 @@
     Array.prototype.forEach.call(els.redirects.querySelectorAll(".options-grid"), function (row) {
       var f = row.querySelector(".r-from").value.trim();
       var t = row.querySelector(".r-to").value.trim();
-      if (f && t) out.push({ from: f, to: t });
+      if (!f || !t) return;
+      var safePath = /^\/?[A-Za-z0-9._~!&'()*+,=:@%/?#-]*$/;
+      if (!safePath.test(f) || f.slice(0, 2) === "//") {
+        throw new Error("Redirect source must be a simple URL path.");
+      }
+      if (/[\u0000-\u0020\u007f;{}"'\\$]/.test(t)) {
+        throw new Error("Redirect targets cannot contain spaces or config control characters.");
+      }
+      if (/^https?:\/\//i.test(t)) {
+        var target;
+        try { target = new URL(t); }
+        catch (e) { throw new Error("Enter a valid redirect URL."); }
+        if ((target.protocol !== "http:" && target.protocol !== "https:") || target.username || target.password) {
+          throw new Error("Redirect URLs must use HTTP or HTTPS and cannot contain credentials.");
+        }
+      } else if (!safePath.test(t) || t.slice(0, 2) === "//") {
+        throw new Error("Redirect targets must be a simple URL path or an HTTP(S) URL.");
+      }
+      out.push({ from: f, to: t });
     });
     return out;
   }
@@ -92,7 +125,7 @@
     if (reds.length) {
       L.push("    # 301 redirects");
       reds.forEach(function (r) {
-        var to = r.to.indexOf("http") === 0 ? r.to : "https://" + (els.www.value === "www" ? "www." + d : d) + (r.to.charAt(0) === "/" ? r.to : "/" + r.to);
+        var to = /^https?:\/\//i.test(r.to) ? r.to : "https://" + (els.www.value === "www" ? "www." + d : d) + (r.to.charAt(0) === "/" ? r.to : "/" + r.to);
         L.push("    location = " + (r.from.charAt(0) === "/" ? r.from : "/" + r.from) + " {");
         L.push("        return 301 " + to + ";");
         L.push("    }");
@@ -139,12 +172,12 @@
     if (els.www.value === "none") {
       L.push("");
       L.push("# www -> non-www");
-      L.push("RewriteCond %{HTTP_HOST} ^www\\." + d.replace(/\./g, "\\.") + " [NC]");
+      L.push("RewriteCond %{HTTP_HOST} ^www\\." + escapeRegex(d) + "$ [NC]");
       L.push("RewriteRule ^(.*)$ https://" + d + "/$1 [L,R=301]");
     } else if (els.www.value === "www") {
       L.push("");
       L.push("# non-www -> www");
-      L.push("RewriteCond %{HTTP_HOST} ^" + d.replace(/\./g, "\\.") + " [NC]");
+      L.push("RewriteCond %{HTTP_HOST} ^" + escapeRegex(d) + "$ [NC]");
       L.push("RewriteRule ^(.*)$ https://www." + d + "/$1 [L,R=301]");
     }
     var reds = rows();
@@ -152,7 +185,7 @@
       L.push("");
       L.push("# 301 redirects");
       reds.forEach(function (r) {
-        var to = r.to.indexOf("http") === 0 ? r.to : "https://" + (els.www.value === "www" ? "www." + d : d) + (r.to.charAt(0) === "/" ? r.to : "/" + r.to);
+        var to = /^https?:\/\//i.test(r.to) ? r.to : "https://" + (els.www.value === "www" ? "www." + d : d) + (r.to.charAt(0) === "/" ? r.to : "/" + r.to);
         L.push("Redirect 301 " + (r.from.charAt(0) === "/" ? r.from : "/" + r.from) + " " + to);
       });
     }
@@ -189,7 +222,9 @@
   }
 
   els.gen.addEventListener("click", function () {
-    var code = els.server.value === "nginx" ? genNginx() : genApache();
+    var code;
+    try { code = els.server.value === "nginx" ? genNginx() : genApache(); }
+    catch (e) { toast(e.message || "Please check the domain and redirect values.", "err"); return; }
     els.outTitle.textContent = els.server.value === "nginx" ? "nginx.conf" : ".htaccess";
     els.out.value = code;
     els.outPanel.classList.remove("hidden");
