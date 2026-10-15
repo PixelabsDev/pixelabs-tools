@@ -46,8 +46,154 @@
   });
 
   /* ---------- XML -> JSON ---------- */
+  function decodeXmlText(value) {
+    var entities = /&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos);/g;
+    if (value.replace(entities, "").indexOf("&") !== -1) throw new Error("Unknown or incomplete XML entity.");
+    return value.replace(entities, function (entity, body) {
+      if (body === "amp") return "&";
+      if (body === "lt") return "<";
+      if (body === "gt") return ">";
+      if (body === "quot") return '"';
+      if (body === "apos") return "'";
+      var code = body.slice(0, 2).toLowerCase() === "#x"
+        ? parseInt(body.slice(2), 16)
+        : parseInt(body.slice(1), 10);
+      var validXmlChar = code === 0x9 || code === 0xa || code === 0xd ||
+        (code >= 0x20 && code <= 0xd7ff) ||
+        (code >= 0xe000 && code <= 0xfffd) ||
+        (code >= 0x10000 && code <= 0x10ffff);
+      if (!validXmlChar) {
+        throw new Error("Invalid XML character reference.");
+      }
+      return String.fromCodePoint(code);
+    });
+  }
+
+  /* Build a plain data tree instead of asking the browser to reinterpret
+     pasted text as a document. DTDs and custom entities are deliberately
+     unsupported; they are not needed by the converter and can expand into
+     unsafe or unbounded content. */
+  function parseXml(source) {
+    if (source.length > 2 * 1024 * 1024) throw new Error("XML is too large (2 MB maximum).");
+    source = source.replace(/^\uFEFF/, "");
+    var root = null;
+    var stack = [];
+    var pos = 0;
+
+    function addText(text) {
+      if (!stack.length) {
+        if (text.trim()) throw new Error("Text outside the root element.");
+        return;
+      }
+      if (text) stack[stack.length - 1].childNodes.push({ nodeType: 3, nodeValue: decodeXmlText(text) });
+    }
+
+    function findTagEnd(start) {
+      var quote = "";
+      for (var i = start; i < source.length; i++) {
+        var ch = source.charAt(i);
+        if (quote) {
+          if (ch === quote) quote = "";
+        } else if (ch === '"' || ch === "'") {
+          quote = ch;
+        } else if (ch === ">") {
+          return i;
+        }
+      }
+      throw new Error("Unclosed XML tag.");
+    }
+
+    function parseStartTag(body) {
+      var match = /^([A-Za-z_:][A-Za-z0-9_.:-]*)/.exec(body);
+      if (!match) throw new Error("Invalid XML element name.");
+      var node = { nodeType: 1, nodeName: match[1], attributes: [], childNodes: [] };
+      var attrs = Object.create(null);
+      var i = match[0].length;
+      while (i < body.length) {
+        while (/\s/.test(body.charAt(i))) i++;
+        if (i >= body.length) break;
+        var attrMatch = /^([A-Za-z_:][A-Za-z0-9_.:-]*)/.exec(body.slice(i));
+        if (!attrMatch) throw new Error("Invalid XML attribute.");
+        var name = attrMatch[1];
+        i += name.length;
+        while (/\s/.test(body.charAt(i))) i++;
+        if (body.charAt(i++) !== "=") throw new Error("XML attributes need a value.");
+        while (/\s/.test(body.charAt(i))) i++;
+        var quote = body.charAt(i++);
+        if (quote !== '"' && quote !== "'") throw new Error("XML attribute values must be quoted.");
+        var end = body.indexOf(quote, i);
+        if (end === -1) throw new Error("Unclosed XML attribute value.");
+        if (Object.prototype.hasOwnProperty.call(attrs, name)) throw new Error("Duplicate XML attribute.");
+        var value = decodeXmlText(body.slice(i, end));
+        attrs[name] = true;
+        node.attributes.push({ name: name, value: value });
+        i = end + 1;
+      }
+      return node;
+    }
+
+    while (pos < source.length) {
+      if (source.slice(pos, pos + 4) === "<!--") {
+        var commentEnd = source.indexOf("-->", pos + 4);
+        if (commentEnd === -1 || source.slice(pos + 4, commentEnd).indexOf("--") !== -1) {
+          throw new Error("Invalid XML comment.");
+        }
+        pos = commentEnd + 3;
+        continue;
+      }
+      if (source.slice(pos, pos + 9) === "<![CDATA[") {
+        var cdataEnd = source.indexOf("]]>", pos + 9);
+        if (cdataEnd === -1 || !stack.length) throw new Error("Invalid CDATA section.");
+        stack[stack.length - 1].childNodes.push({ nodeType: 3, nodeValue: source.slice(pos + 9, cdataEnd) });
+        pos = cdataEnd + 3;
+        continue;
+      }
+      if (/^<!DOCTYPE\b/i.test(source.slice(pos))) {
+        throw new Error("DOCTYPE and custom entities are not supported.");
+      }
+      if (source.slice(pos, pos + 2) === "<?") {
+        var piEnd = source.indexOf("?>", pos + 2);
+        if (piEnd === -1) throw new Error("Unclosed XML declaration.");
+        pos = piEnd + 2;
+        continue;
+      }
+      if (source.slice(pos, pos + 2) === "</") {
+        var closeEnd = source.indexOf(">", pos + 2);
+        if (closeEnd === -1) throw new Error("Unclosed XML closing tag.");
+        var closeName = source.slice(pos + 2, closeEnd).trim();
+        var openNode = stack.pop();
+        if (!openNode || closeName !== openNode.nodeName) throw new Error("Mismatched XML closing tag.");
+        pos = closeEnd + 1;
+        continue;
+      }
+      if (source.charAt(pos) === "<") {
+        if (source.slice(pos, pos + 2) === "<!") throw new Error("Unsupported XML declaration.");
+        var tagEnd = findTagEnd(pos + 1);
+        var body = source.slice(pos + 1, tagEnd);
+        var selfClosing = /\/\s*$/.test(body);
+        if (selfClosing) body = body.replace(/\/\s*$/, "");
+        var node = parseStartTag(body);
+        if (stack.length) stack[stack.length - 1].childNodes.push(node);
+        else if (root) throw new Error("XML must have one root element.");
+        else root = node;
+        if (!selfClosing) {
+          if (stack.length >= 128) throw new Error("XML nesting is too deep (128 levels maximum).");
+          stack.push(node);
+        }
+        pos = tagEnd + 1;
+        continue;
+      }
+      var textEnd = source.indexOf("<", pos);
+      if (textEnd === -1) textEnd = source.length;
+      addText(source.slice(pos, textEnd));
+      pos = textEnd;
+    }
+    if (stack.length || !root) throw new Error("XML is incomplete.");
+    return root;
+  }
+
   function xmlNodeToJson(node) {
-    var obj = {};
+    var obj = Object.create(null);
     var i;
     for (i = 0; i < node.attributes.length; i++) {
       var a = node.attributes[i];
@@ -83,17 +229,16 @@
   els.x2j.addEventListener("click", function () {
     var text = els.xmlIn.value.trim();
     if (!text) { msg(els.msg1, "Paste some XML (or drop an .xml file) first.", "err"); return; }
-    var doc = new DOMParser().parseFromString(text, "application/xml");
-    if (doc.querySelector("parsererror")) {
-      msg(els.msg1, "Invalid XML — check the tags.", "err");
-      return;
+    try {
+      var root = parseXml(text);
+      var result = Object.create(null);
+      result[root.nodeName] = xmlNodeToJson(root);
+      els.x2jOut.value = JSON.stringify(result, null, 2);
+      els.x2jWrap.classList.remove("hidden");
+      msg(els.msg1, "Converted to JSON.", "ok");
+    } catch (e) {
+      msg(els.msg1, e.message || "Invalid XML — check the tags.", "err");
     }
-    var root = doc.documentElement;
-    var result = {};
-    result[root.nodeName] = xmlNodeToJson(root);
-    els.x2jOut.value = JSON.stringify(result, null, 2);
-    els.x2jWrap.classList.remove("hidden");
-    msg(els.msg1, "Converted to JSON.", "ok");
   });
 
   els.copyX2j.addEventListener("click", function () { copyText(els.x2jOut.value, function () { toast("JSON copied!", "ok"); }); });
@@ -123,7 +268,7 @@
     var i;
 
     if (val !== null && typeof val === "object" && !Array.isArray(val)) {
-      var clone = {};
+      var clone = Object.create(null);
       var keys = Object.keys(val);
       for (i = 0; i < keys.length; i++) {
         var k = keys[i];

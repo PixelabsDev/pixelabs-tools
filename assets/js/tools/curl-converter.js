@@ -95,6 +95,10 @@
       i++;
     }
     if (!req.method) req.method = req.data ? "POST" : (req.head ? "HEAD" : "GET");
+    if (!/^[A-Za-z][A-Za-z0-9!#$%&'*+.^_`|~-]*$/.test(req.method)) {
+      throw new Error("Invalid HTTP method.");
+    }
+    req.method = req.method.toUpperCase();
     return req;
   }
 
@@ -125,8 +129,8 @@
     var h = parseHeaders(req.headers);
     var lines = [];
     var opts = [];
-    opts.push("  method: \"" + req.method + "\"");
-    if (Object.keys(h).length) opts.push("  headers: " + jsVal(h, "  ").replace(/^/, ""));
+    opts.push("  method: " + JSON.stringify(req.method));
+    if (Object.keys(h).length) opts.push("  headers: " + jsVal(h, "  "));
     if (req.user) h["Authorization"] = "Basic " + btoa(req.user);
     if (req.data !== null) {
       var json = tryParseJson(req.data);
@@ -164,7 +168,7 @@
 
   function genAxios(req) {
     var h = parseHeaders(req.headers);
-    var lines = ["axios({", "  url: " + JSON.stringify(req.url) + ",", "  method: \"" + req.method + "\""];
+    var lines = ["axios({", "  url: " + JSON.stringify(req.url) + ",", "  method: " + JSON.stringify(req.method)];
     if (Object.keys(h).length) lines.push("  headers: " + jsVal(h, "  "));
     if (req.data !== null) {
       var json = tryParseJson(req.data);
