@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Frequency Tone Generator — PixelAbs Tools</title>
-  <meta name="description" content="Generate a tone or frequency sweep in your browser to explore audio frequencies and test sound equipment. Not a pest repellent.">
+  <meta name="description" content="Explore audio frequencies with a browser tone generator and read what rat ultrasound studies do and do not show. Not a pest repellent.">
   <meta name="theme-color" content="#6366f1">
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <link rel="apple-touch-icon" href="../assets/img/icon-192.png">
@@ -22,7 +22,7 @@
       <div class="tool-head">
         <a class="back" href="../index.html">← All tools</a>
         <h1><span class="icon">〰️</span> Frequency Tone Generator</h1>
-        <p class="desc">Generate a steady tone or a frequency sweep to explore audio frequencies and check what your playback device can reproduce. Runs locally in your browser.</p>
+        <p class="desc">Generate a steady tone or a frequency sweep to explore audio frequencies. Runs locally in your browser; it cannot generate ultrasonic sound.</p>
       </div>
       <div class="panel">
         <div class="options-grid">
@@ -52,8 +52,14 @@
       </div>
       <div class="panel">
         <h2>Important limits</h2>
-        <p class="muted">This is a tone generator, not a proven pest repellent. Scientific sources have not established a reliably effective ultrasonic frequency for repelling household pests. A browser can request a frequency, but your device may filter or fail to reproduce it; this tool cannot measure the sound coming from your speaker.</p>
+        <p class="muted">This is a tone generator, not a proven rat repellent. Its output is capped at 20,000 Hz, while ultrasound starts above 20,000 Hz. Rats can hear well into the ultrasonic range, so this browser tool cannot test the frequencies often discussed in rat studies. A browser can request a frequency, but your device may filter or fail to reproduce it; this tool cannot measure the sound coming from your speaker.</p>
         <p class="muted" style="margin-top:12px">Start at low volume, keep speakers away from ears, and stop if the sound is uncomfortable. High-frequency sounds may still be audible or bothersome to children and animals. Do not use this tool as pest control.</p>
+      </div>
+      <div class="panel">
+        <h2>What rat studies found</h2>
+        <p class="muted">Rat hearing extends beyond the range this browser tool can produce. In a field study, a narrow-band device near 22 kHz initially reduced rat feeding in the treated room, but feeding rose again after one week; a broad-band device peaking near 41 kHz did not measurably reduce activity in that room. Those results do not identify a reliably effective setting for a household speaker.</p>
+        <p class="muted" style="margin-top:12px">A credible test would need an ultrasonic transducer and amplifier, calibrated ultrasonic measurement equipment, and repeated on/off observations of rat activity in the actual space. Frequency and sound pressure both matter, and one short playback cannot establish lasting repellency.</p>
+        <p class="muted" style="margin-top:12px">Sources: <a href="https://pubmed.ncbi.nlm.nih.gov/8188553/" target="_blank" rel="noopener">Norway rat audiogram</a> · <a href="https://doi.org/10.1016/0022-474X(77)90004-2" target="_blank" rel="noopener">field test of 22 kHz and 41 kHz devices</a> · <a href="https://escholarship.org/uc/item/9ss4g9wv" target="_blank" rel="noopener">controlled and field testing protocols</a></p>
       </div>
     </div>
   </main>
