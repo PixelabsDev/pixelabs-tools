@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frequency Tone Generator — PixelAbs Tools</title>
+  <meta name="description" content="Generate a tone or frequency sweep in your browser to explore audio frequencies and test sound equipment. Not a pest repellent.">
+  <meta name="theme-color" content="#6366f1">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="apple-touch-icon" href="../assets/img/icon-192.png">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="inner">
+      <a class="brand" href="../index.html"><img src="../assets/img/icon-192.png" alt="PixelAbs Tools logo"><span>PixelAbs&nbsp;Tools</span></a>
+      <div class="header-actions"><span class="privacy-pill"><span class="dot"></span><span class="label">Audio generated locally</span></span><button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark / light theme" aria-label="Toggle theme">◐</button></div>
+    </div>
+  </header>
+  <main class="tool-page">
+    <div class="container">
+      <div class="tool-head">
+        <a class="back" href="../index.html">← All tools</a>
+        <h1><span class="icon">〰️</span> Frequency Tone Generator</h1>
+        <p class="desc">Generate a steady tone or a frequency sweep to explore audio frequencies and check what your playback device can reproduce. Runs locally in your browser.</p>
+      </div>
+      <div class="panel">
+        <div class="options-grid">
+          <div class="option">
+            <label class="field" for="mode">Mode</label>
+            <select id="mode"><option value="tone">Steady tone</option><option value="sweep">Frequency sweep</option></select>
+          </div>
+          <div class="option" id="frequency-option">
+            <label class="field" for="frequency">Frequency: <b><span id="frequency-value">1000</span> Hz</b></label>
+            <input type="range" id="frequency" min="200" max="20000" step="10" value="1000" style="width:100%">
+          </div>
+          <div class="option hidden" id="sweep-option">
+            <label class="field" for="sweep-duration">Sweep duration</label>
+            <select id="sweep-duration"><option value="5">5 seconds</option><option value="10" selected>10 seconds</option><option value="20">20 seconds</option></select>
+          </div>
+          <div class="option">
+            <label class="field" for="volume">Output level: <b><span id="volume-value">2</span>%</b></label>
+            <input type="range" id="volume" min="0" max="10" step="1" value="2" style="width:100%">
+          </div>
+        </div>
+        <p class="muted" id="device-limit" style="font-size:.85rem; margin-top:12px">Playback range depends on your browser and audio device.</p>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="start-btn">▶ Start sound</button>
+          <button class="btn btn-secondary" id="stop-btn" disabled>■ Stop</button>
+        </div>
+        <div class="msg" id="msg" role="status" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <h2>Important limits</h2>
+        <p class="muted">This is a tone generator, not a proven pest repellent. Scientific sources have not established a reliably effective ultrasonic frequency for repelling household pests. A browser can request a frequency, but your device may filter or fail to reproduce it; this tool cannot measure the sound coming from your speaker.</p>
+        <p class="muted" style="margin-top:12px">Start at low volume, keep speakers away from ears, and stop if the sound is uncomfortable. High-frequency sounds may still be audible or bothersome to children and animals. Do not use this tool as pest control.</p>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="inner"><div class="footer-slim"><div class="footer-brand"><a class="footer-logo" href="../index.html" aria-label="PixelAbs Tools — home"><span class="footer-mark" aria-hidden="true">⚡</span>PixelAbs Tools</a><p class="footer-tagline">Runs entirely in your browser — nothing is ever uploaded.</p></div><div class="links"><a href="../index.html">All tools</a><a href="https://github.com/Vishalkumar-acad/pixelabs-tools" target="_blank" rel="noopener">GitHub</a><span>© <span id="year"></span></span></div></div><div class="footer-bottom"><span class="saved-note" id="savings-note"></span></div></div>
+  </footer>
+  <div id="toast-root"></div>
+  <script src="../assets/js/common.js"></script>
+  <script src="../assets/js/tools/frequency-tone.js"></script>
+</body>
+</html>

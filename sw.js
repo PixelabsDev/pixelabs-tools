@@ -19,7 +19,7 @@
    ============================================================ */
 "use strict";
 
-var CACHE_VERSION = "pat-v67";
+var CACHE_VERSION = "pat-v68";
 
 /* Scope-relative path helper — prefixes paths with the service worker's
    scope. (Avoids new URL(), which would discard the scope's sub-path for
@@ -62,6 +62,7 @@ var PRECACHE_REL = [
   "/assets/js/tools/audio-trimmer.js",
   "/assets/js/tools/audio-pitch-speed.js",
   "/assets/js/tools/audio-joiner.js",
+  "/assets/js/tools/frequency-tone.js",
   "/assets/js/tools/video-to-gif.js",
   "/assets/js/tools/csv-json.js",
   "/assets/js/tools/xml-json.js",
@@ -109,6 +110,7 @@ var PRECACHE_REL = [
   "/tools/audio-trimmer.html",
   "/tools/audio-pitch-speed.html",
   "/tools/audio-joiner.html",
+  "/tools/frequency-tone.html",
   "/tools/video-to-gif.html",
   "/tools/csv-json.html",
   "/tools/xml-json.html",
