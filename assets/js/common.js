@@ -139,19 +139,13 @@ function formatBytes(bytes) {
 }
 
 function escapeHtml(s) {
-  var amp = String.fromCharCode(38);
-  var map = {};
-  map[String.fromCharCode(60)] = amp + "lt;";
-  map[String.fromCharCode(62)] = amp + "gt;";
-  map[String.fromCharCode(34)] = amp + "quot;";
-  map[String.fromCharCode(39)] = amp + "#39;";
-  var str = String(s);
-  var out = "";
-  for (var i = 0; i < str.length; i++) {
-    var c = str.charAt(i);
-    out += (c === amp) ? amp + "amp;" : (map[c] || c);
-  }
-  return out;
+  if (s === null || s === undefined) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function downloadBlob(blob, filename) {
@@ -617,3 +611,4 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
+if (typeof module !== 'undefined' && module.exports) { module.exports = { escapeHtml, formatBytes }; }
