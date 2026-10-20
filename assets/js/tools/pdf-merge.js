@@ -60,29 +60,19 @@
       return;
     }
     files.forEach(function (item, i) {
-      var row = document.createElement("div");
-      row.className = "file-row";
       var thumb = document.createElement("div");
       thumb.className = "thumb pdf";
       thumb.textContent = "📄";
-      var meta = document.createElement("div");
-      meta.className = "meta";
-      meta.innerHTML = "<div class='name'>" + (i + 1) + ". " + escapeHtml(item.file.name) + "</div>" +
-        "<div class='size'>" + formatBytes(item.file.size) + "</div>";
-      var controls = document.createElement("div");
-      controls.className = "controls";
-      [["↑", "Move up", function () { move(i, -1); }],
-       ["↓", "Move down", function () { move(i, 1); }],
-       ["✕", "Remove", function () { files = files.filter(function (x) { return x.id !== item.id; }); render(); }]]
-        .forEach(function (b) {
-          var btn = document.createElement("button");
-          btn.title = b[1];
-          btn.setAttribute("aria-label", b[1] + ": " + item.file.name);
-          btn.textContent = b[0];
-          btn.addEventListener("click", b[2]);
-          controls.appendChild(btn);
-        });
-      row.append(thumb, meta, controls);
+
+      var row = renderFileRow(item.file, {
+        thumbElement: thumb,
+        nameHtml: (i + 1) + ". " + escapeHtml(item.file.name),
+        controls: [
+          ["↑", "Move up: " + item.file.name, function () { move(i, -1); }],
+          ["↓", "Move down: " + item.file.name, function () { move(i, 1); }],
+          ["✕", "Remove: " + item.file.name, function () { files = files.filter(function (x) { return x.id !== item.id; }); render(); }]
+        ]
+      });
       els.fileList.appendChild(row);
     });
   }

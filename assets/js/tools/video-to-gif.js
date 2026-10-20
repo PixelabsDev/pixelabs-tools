@@ -140,25 +140,6 @@
   function renderPhotos() {
     els.photoList.innerHTML = "";
     photos.forEach(function (p, i) {
-      var row = document.createElement("div");
-      row.className = "file-row";
-
-      var thumb = document.createElement("img");
-      thumb.className = "thumb";
-      thumb.src = p.url;
-      thumb.alt = "";
-
-      var meta = document.createElement("div");
-      meta.className = "meta";
-      var name = document.createElement("div");
-      name.className = "name";
-      name.textContent = (i + 1) + ". " + p.name;
-      var size = document.createElement("div");
-      size.className = "size";
-      size.textContent = formatBytes(p.size) + " · " + p.img.naturalWidth + "×" + p.img.naturalHeight;
-      meta.appendChild(name);
-      meta.appendChild(size);
-
       var durWrap = document.createElement("div");
       durWrap.style.display = "flex";
       durWrap.style.alignItems = "center";
@@ -181,33 +162,27 @@
       durWrap.appendChild(dur);
       durWrap.appendChild(durLabel);
 
-      var controls = document.createElement("div");
-      controls.className = "controls";
-      function btn(txt, title, fn) {
-        var b = document.createElement("button");
-        b.textContent = txt;
-        b.title = title;
-        b.setAttribute("aria-label", title);
-        b.addEventListener("click", fn);
-        return b;
-      }
-      controls.appendChild(btn("↑", "Move earlier", function () {
-        if (i > 0) { photos.splice(i - 1, 0, photos.splice(i, 1)[0]); renderPhotos(); }
-      }));
-      controls.appendChild(btn("↓", "Move later", function () {
-        if (i < photos.length - 1) { photos.splice(i + 1, 0, photos.splice(i, 1)[0]); renderPhotos(); }
-      }));
-      controls.appendChild(btn("✕", "Remove", function () {
-        URL.revokeObjectURL(p.url);
-        photos.splice(i, 1);
-        renderPhotos();
-        if (!photos.length) els.photoPanel.classList.add("hidden");
-      }));
+      var row = renderFileRow(p.file || new File([], p.name), {
+        url: p.url,
+        nameHtml: escapeHtml((i + 1) + ". " + p.name),
+        sizeHtml: formatBytes(p.size) + " · " + p.img.naturalWidth + "×" + p.img.naturalHeight,
+        controls: [
+          durWrap,
+          ["↑", "Move earlier", function () {
+            if (i > 0) { photos.splice(i - 1, 0, photos.splice(i, 1)[0]); renderPhotos(); }
+          }],
+          ["↓", "Move later", function () {
+            if (i < photos.length - 1) { photos.splice(i + 1, 0, photos.splice(i, 1)[0]); renderPhotos(); }
+          }],
+          ["✕", "Remove", function () {
+            URL.revokeObjectURL(p.url);
+            photos.splice(i, 1);
+            renderPhotos();
+            if (!photos.length) els.photoPanel.classList.add("hidden");
+          }]
+        ]
+      });
 
-      row.appendChild(thumb);
-      row.appendChild(meta);
-      row.appendChild(durWrap);
-      row.appendChild(controls);
       els.photoList.appendChild(row);
     });
   }

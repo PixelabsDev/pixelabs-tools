@@ -53,11 +53,11 @@
     els.results.innerHTML = "";
     NAMES.forEach(function (name, i) {
       var b = bitsFor(i);
-      var row = document.createElement("div");
-      row.className = "file-row";
-      row.innerHTML = '<div class="meta"><div class="name"></div><div class="size"></div></div>';
-      row.querySelector(".name").textContent = name;
-      row.querySelector(".size").textContent = fmt(bits / b) + " " + name;
+      var row = renderFileRow(null, {
+        thumb: false,
+        nameHtml: escapeHtml(name),
+        sizeHtml: escapeHtml(fmt(bits / b) + " " + name)
+      });
       if (i === idx) row.classList.add("done");
       els.results.appendChild(row);
     });

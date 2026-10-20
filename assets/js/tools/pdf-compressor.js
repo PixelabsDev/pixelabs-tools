@@ -360,26 +360,35 @@
 
       resultsEl.innerHTML = "";
       outputs.forEach(function (o, i) {
-        var row = document.createElement("div");
-        row.className = "file-row done";
         var orig = files[i].size;
-        var inner;
+        var sizeHtml, dlBtn;
+
         if (o.error) {
-          inner = "<span class='meta'><span class='name'>" + escapeHtml(o.name) + "</span>" +
-                  "<span class='size'><span class='delta-bad'>Failed</span></span></span>";
+          sizeHtml = "<span class='delta-bad'>Failed</span>";
         } else if (o.kept) {
-          inner = "<span class='meta'><span class='name'>" + escapeHtml(o.name) + "</span>" +
-                  "<span class='size'>" + formatBytes(orig) + " <span class='delta-good'>(already optimal — kept)</span></span></span>" +
-                  "<span class='controls'><button title='Download' data-dl='" + i + "'>⬇</button></span>";
+          sizeHtml = formatBytes(orig) + " <span class='delta-good'>(already optimal — kept)</span>";
         } else {
           var delta = orig >= o.bytes.length ? "-" + formatBytes(orig - o.bytes.length) : "+" + formatBytes(o.bytes.length - orig);
           var cls = orig >= o.bytes.length ? "delta-good" : "delta-bad";
-          inner = "<span class='meta'><span class='name'>" + escapeHtml(o.name) + "</span>" +
-                  "<span class='size'>" + formatBytes(orig) + " → " + formatBytes(o.bytes.length) +
-                  " <span class='" + cls + "'>(" + delta + ")</span></span></span>" +
-                  "<span class='controls'><button title='Download' data-dl='" + i + "'>⬇</button></span>";
+          sizeHtml = formatBytes(orig) + " → " + formatBytes(o.bytes.length) + " <span class='" + cls + "'>(" + delta + ")</span>";
         }
-        row.innerHTML = inner;
+
+        var controls = [];
+        if (!o.error) {
+          var btn = document.createElement("button");
+          btn.title = "Download";
+          btn.textContent = "⬇";
+          btn.setAttribute("data-dl", i);
+          controls.push(btn);
+        }
+
+        var row = renderFileRow(null, {
+          thumb: false,
+          nameHtml: escapeHtml(o.name),
+          sizeHtml: sizeHtml,
+          controls: controls
+        });
+        row.classList.add("done");
         resultsEl.appendChild(row);
       });
 

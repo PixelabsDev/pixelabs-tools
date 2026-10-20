@@ -611,4 +611,65 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
-if (typeof module !== 'undefined' && module.exports) { module.exports = { escapeHtml, formatBytes }; }
+/* ---------- Shared UI Utilities ---------- */
+
+function renderFileRow(file, options) {
+  options = options || {};
+  var row = document.createElement("div");
+  row.className = "file-row";
+
+  if (options.thumbElement) {
+    row.appendChild(options.thumbElement);
+  } else if (options.thumb !== false) {
+    var thumb = document.createElement("img");
+    thumb.className = "thumb";
+    if (options.url) {
+      thumb.src = options.url;
+    } else if (typeof File !== "undefined" && file instanceof File) {
+      thumb.src = URL.createObjectURL(file);
+    }
+    row.appendChild(thumb);
+  }
+
+  var meta = document.createElement("div");
+  meta.className = "meta";
+
+  var nameHtml = Object.prototype.hasOwnProperty.call(options, "nameHtml")
+    ? options.nameHtml : escapeHtml(file && file.name || "file");
+  var sizeHtml = Object.prototype.hasOwnProperty.call(options, "sizeHtml")
+    ? options.sizeHtml : (file ? formatBytes(file.size) : "");
+
+  meta.innerHTML = "<div class='name'>" + nameHtml + "</div>" +
+    "<div class='size'>" + sizeHtml + "</div>";
+  row.appendChild(meta);
+
+  var controls = document.createElement("div");
+  controls.className = "controls";
+
+  if (options.controls) {
+    options.controls.forEach(function(ctrl) {
+      if (ctrl instanceof HTMLElement) {
+        controls.appendChild(ctrl);
+      } else if (Array.isArray(ctrl)) {
+        var btn = document.createElement("button");
+        btn.textContent = ctrl[0];
+        if (ctrl[1]) btn.title = ctrl[1];
+        if (ctrl[1]) btn.setAttribute("aria-label", ctrl[1]);
+        if (ctrl[2]) btn.addEventListener("click", ctrl[2]);
+        controls.appendChild(btn);
+      }
+    });
+  } else if (options.onRemove) {
+    var del = document.createElement("button");
+    del.title = "Remove";
+    del.setAttribute("aria-label", "Remove " + (file && file.name || "file"));
+    del.textContent = "✕";
+    del.addEventListener("click", options.onRemove);
+    controls.appendChild(del);
+  }
+
+  row.appendChild(controls);
+  return row;
+}
+
+if (typeof module !== 'undefined' && module.exports) { module.exports = { escapeHtml, formatBytes, renderFileRow }; }
