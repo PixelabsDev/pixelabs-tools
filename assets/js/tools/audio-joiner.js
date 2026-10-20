@@ -57,27 +57,16 @@
   function renderList() {
     els.list.innerHTML = "";
     files.forEach(function (f, i) {
-      var row = document.createElement("div");
-      row.className = "file-row";
-      row.innerHTML =
-        '<div class="meta"><div class="name"></div>' +
-        '<div class="size"></div></div>' +
-        '<div class="controls"></div>';
-      row.querySelector(".name").textContent = (i + 1) + ". " + f.name;
-      row.querySelector(".size").textContent =
-        f.buffer.duration.toFixed(1) + "s · " + f.buffer.sampleRate + " Hz";
-
-      var controls = row.querySelector(".controls");
-      function btn(txt, fn) {
-        var b = document.createElement("button");
-        b.textContent = txt;
-        b.title = txt;
-        b.addEventListener("click", fn);
-        controls.appendChild(b);
-      }
-      btn("↑", function () { if (i > 0) { files.splice(i - 1, 0, files.splice(i, 1)[0]); renderList(); } });
-      btn("↓", function () { if (i < files.length - 1) { files.splice(i + 1, 0, files.splice(i, 1)[0]); renderList(); } });
-      btn("✕", function () { files.splice(i, 1); renderList(); });
+      var row = renderFileRow(f.file, {
+        thumb: false,
+        nameHtml: escapeHtml((i + 1) + ". " + f.name),
+        sizeHtml: f.buffer.duration.toFixed(1) + "s · " + f.buffer.sampleRate + " Hz",
+        controls: [
+          ["↑", "Move up", function () { if (i > 0) { files.splice(i - 1, 0, files.splice(i, 1)[0]); renderList(); } }],
+          ["↓", "Move down", function () { if (i < files.length - 1) { files.splice(i + 1, 0, files.splice(i, 1)[0]); renderList(); } }],
+          ["✕", "Remove", function () { files.splice(i, 1); renderList(); }]
+        ]
+      });
       els.list.appendChild(row);
     });
   }

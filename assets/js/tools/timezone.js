@@ -89,11 +89,12 @@
     els.results.innerHTML = "";
     ZONES.forEach(function (z) {
       var isFrom = z[1] === fromZone;
-      var row = document.createElement("div");
-      row.className = "file-row" + (isFrom ? " done" : "");
-      row.innerHTML = '<div class="meta"><div class="name"></div><div class="size"></div></div>';
-      row.querySelector(".name").textContent = z[0] + (isFrom ? "  (source)" : "");
-      row.querySelector(".size").textContent = fmt(utc, z[1], true);
+      var row = renderFileRow(null, {
+        thumb: false,
+        nameHtml: escapeHtml(z[0] + (isFrom ? "  (source)" : "")),
+        sizeHtml: escapeHtml(fmt(utc, z[1], true))
+      });
+      if (isFrom) row.classList.add("done");
       els.results.appendChild(row);
     });
   }
@@ -144,16 +145,17 @@
     var now = new Date();
     els.clocks.innerHTML = "";
     ZONES.forEach(function (z) {
-      var row = document.createElement("div");
-      row.className = "file-row";
-      row.setAttribute("data-zone", z[1]);
-      row.innerHTML = '<div class="meta"><div class="name"></div><div class="size"></div></div>';
-      var nameEl = row.querySelector(".name");
-      nameEl.textContent = z[0];
-      nameEl.appendChild(dayBadge(z[1], now));
       var t = fmt(now, z[1], false);
       var d = new Intl.DateTimeFormat(undefined, { timeZone: z[1], month: "short", day: "numeric" }).format(now);
-      row.querySelector(".size").textContent = d + " \u00B7 " + t;
+
+      var row = renderFileRow(null, {
+        thumb: false,
+        nameHtml: escapeHtml(z[0]),
+        sizeHtml: escapeHtml(d + " \u00B7 " + t)
+      });
+      row.setAttribute("data-zone", z[1]);
+      row.querySelector(".name").appendChild(dayBadge(z[1], now));
+
       els.clocks.appendChild(row);
     });
   }

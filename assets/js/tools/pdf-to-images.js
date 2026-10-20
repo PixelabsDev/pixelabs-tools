@@ -275,11 +275,18 @@
 
     els.results.innerHTML = "";
     outputs.forEach(function (o, i) {
-      var row = document.createElement("div");
-      row.className = "file-row done";
-      row.innerHTML = "<span class='meta'><span class='name'>" + escapeHtml(o.name) + "</span>" +
-        "<span class='size'>" + formatBytes(o.blob.size) + "</span></span>" +
-        "<span class='controls'><button title='Download' data-dl='" + i + "'>⬇</button></span>";
+      var btn = document.createElement("button");
+      btn.title = "Download";
+      btn.textContent = "⬇";
+      btn.setAttribute("data-dl", i);
+
+      var row = renderFileRow(null, {
+        thumb: false,
+        nameHtml: escapeHtml(o.name),
+        sizeHtml: formatBytes(o.blob.size),
+        controls: [btn]
+      });
+      row.classList.add("done");
       els.results.appendChild(row);
     });
     els.resultsPanel.classList.remove("hidden");

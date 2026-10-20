@@ -169,10 +169,11 @@
       els.next.innerHTML = "";
       if (runs.length) {
         runs.forEach(function (r) {
-          var row = document.createElement("div");
-          row.className = "file-row";
-          row.innerHTML = '<div class="meta"><div class="name" style="font-family:var(--mono)"></div></div>';
-          row.querySelector(".name").textContent = fmtDate(r);
+          var row = renderFileRow(null, {
+            thumb: false,
+            nameHtml: "<span style='font-family:var(--mono)'>" + escapeHtml(fmtDate(r)) + "</span>",
+            sizeHtml: ""
+          });
           els.next.appendChild(row);
         });
       } else {

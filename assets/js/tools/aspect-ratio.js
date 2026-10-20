@@ -46,11 +46,11 @@
       var w, h;
       if (ratio >= 1) { w = long; h = Math.round(long / ratio); }
       else { h = long; w = Math.round(long * ratio); }
-      var r = document.createElement("div");
-      r.className = "file-row";
-      r.innerHTML = '<div class="meta"><div class="name"></div><div class="size"></div></div>';
-      r.querySelector(".name").textContent = name;
-      r.querySelector(".size").textContent = w + " × " + h + " px";
+      var r = renderFileRow(null, {
+        thumb: false,
+        nameHtml: escapeHtml(name),
+        sizeHtml: escapeHtml(w + " × " + h + " px")
+      });
       table.appendChild(r);
     });
     els.sizes.appendChild(table);

@@ -89,29 +89,15 @@
     els.clearBtn.disabled = false;
     listEl.innerHTML = "";
     files.forEach(function (item) {
-      var row = document.createElement("div");
-      row.className = "file-row";
-      var thumb = document.createElement("img");
-      thumb.className = "thumb";
       if (!item.url) item.url = URL.createObjectURL(item.file);
-      thumb.src = item.url;
-      var meta = document.createElement("div");
-      meta.className = "meta";
-      meta.innerHTML = "<div class='name'>" + escapeHtml(item.file.name) + "</div>" +
-        "<div class='size'>" + formatBytes(item.file.size) + "</div>";
-      var controls = document.createElement("div");
-      controls.className = "controls";
-      var del = document.createElement("button");
-      del.title = "Remove";
-      del.setAttribute("aria-label", "Remove " + item.file.name);
-      del.textContent = "✕";
-      del.addEventListener("click", function () {
-        if (item.url) URL.revokeObjectURL(item.url);
-        files = files.filter(function (x) { return x.id !== item.id; });
-        renderFiles();
+      var row = renderFileRow(item.file, {
+        url: item.url,
+        onRemove: function () {
+          if (item.url) URL.revokeObjectURL(item.url);
+          files = files.filter(function (x) { return x.id !== item.id; });
+          renderFiles();
+        }
       });
-      controls.appendChild(del);
-      row.append(thumb, meta, controls);
       listEl.appendChild(row);
     });
   }
@@ -279,23 +265,19 @@
     els.results.innerHTML = "";
     ok.forEach(function (r) {
       var ext = EXT[r.blob.type] || "img";
-      var row = document.createElement("div");
-      row.className = "file-row done";
-      var thumb = document.createElement("img");
-      thumb.className = "thumb";
-      thumb.src = URL.createObjectURL(r.blob);
-      var meta = document.createElement("div");
-      meta.className = "meta";
-      meta.innerHTML = "<div class='name'>" + escapeHtml(baseName(r.name)) + "." + ext + "</div>" +
-        "<div class='size'>" + formatBytes(r.originalSize) + " → <b>" + formatBytes(r.size) + "</b> · " +
-        r.width + "×" + r.height + "</div>";
       var dl = document.createElement("button");
       dl.className = "btn btn-secondary btn-sm";
       dl.textContent = "Download";
       dl.addEventListener("click", function () {
         downloadBlob(r.blob, baseName(r.name) + "." + ext);
       });
-      row.append(thumb, meta, dl);
+      var row = renderFileRow(new File([], r.name), {
+        url: URL.createObjectURL(r.blob),
+        nameHtml: escapeHtml(baseName(r.name)) + "." + ext,
+        sizeHtml: formatBytes(r.originalSize) + " → <b>" + formatBytes(r.size) + "</b> · " + r.width + "×" + r.height,
+        controls: [dl]
+      });
+      row.classList.add("done");
       els.results.appendChild(row);
     });
 
