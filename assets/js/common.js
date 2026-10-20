@@ -131,11 +131,11 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 function formatBytes(bytes) {
   if (bytes === 0) return "0 B";
   if (!bytes && bytes !== 0) return "—";
-  var units = ["B", "KB", "MB", "GB"];
-  var i = Math.floor(Math.log(bytes) / Math.log(1024));
+  var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+  var i = Math.floor(Math.log(Math.abs(bytes)) / Math.log(1024));
   if (i >= units.length) i = units.length - 1;
   var v = bytes / Math.pow(1024, i);
-  return (v >= 100 || i === 0 ? Math.round(v) : v.toFixed(1)) + " " + units[i];
+  return (Math.abs(v) >= 100 || i === 0 ? Math.round(v) : v.toFixed(1)) + " " + units[i];
 }
 
 function escapeHtml(s) {
