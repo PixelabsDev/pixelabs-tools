@@ -5,6 +5,8 @@ describe('escapeHtml', () => {
     expect(escapeHtml('')).toBe('');
     expect(escapeHtml(null)).toBe('');
     expect(escapeHtml(undefined)).toBe('');
+    expect(escapeHtml(false)).toBe('false');
+    expect(escapeHtml(0)).toBe('0');
   });
 
   it('should escape &', () => {

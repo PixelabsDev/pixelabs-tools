@@ -139,7 +139,7 @@ function formatBytes(bytes) {
 }
 
 function escapeHtml(s) {
-  if (!s) return "";
+  if (s === null || s === undefined) return "";
   return String(s)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
