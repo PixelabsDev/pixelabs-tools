@@ -34,10 +34,10 @@
         <p class="desc">See what your photo secretly reveals — camera, date, and GPS location — then strip all metadata with one click. Runs entirely in your browser.</p>
       </div>
 
-      <div class="dropzone" id="dropzone">
+      <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-labelledby="dz-title">
         <input type="file" id="file-input" accept="image/*" class="hidden">
         <span class="dz-emoji">🕵️</span>
-        <div class="dz-title">Drop a photo here, <b>browse</b>, or paste</div>
+        <div class="dz-title" id="dz-title">Drop a photo here, <b>browse</b>, or paste</div>
         <div class="dz-sub">JPG · PNG · WEBP · HEIC — never uploaded</div>
       </div>
 
@@ -48,7 +48,7 @@
         <div class="btn-row">
           <button class="btn btn-primary" id="remove-btn">Remove all metadata & download</button>
         </div>
-        <div class="msg" id="msg"></div>
+        <div class="msg" id="msg" aria-live="polite" aria-atomic="true"></div>
         <p class="muted" style="font-size:.8rem; margin-top:10px;" id="remove-note"></p>
       </div>
 

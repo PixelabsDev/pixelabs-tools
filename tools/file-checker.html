@@ -34,10 +34,10 @@
         <p class="desc">Lost a file extension, or suspect a file is not what it claims to be? This reads the file's real signature (magic bytes) locally.</p>
       </div>
 
-      <div class="dropzone" id="dropzone">
+      <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-labelledby="dz-title">
         <input type="file" id="file-input" class="hidden">
         <span class="dz-emoji">🔍</span>
-        <div class="dz-title">Drop <b>any</b> file here, <b>browse</b>, or paste</div>
+        <div class="dz-title" id="dz-title">Drop <b>any</b> file here, <b>browse</b>, or paste</div>
         <div class="dz-sub">Only the first 64 bytes are read — nothing is uploaded anywhere</div>
       </div>
 
