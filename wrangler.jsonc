@@ -17,6 +17,7 @@
     "run_worker_first": ["/", "/about", "/status", "/api", "/api/*", "/__log",
                         "/assets/vendor/*", "/assets/fonts/*"]
   },
+  "previews": {},
   "observability": {
     "enabled": true
   }
