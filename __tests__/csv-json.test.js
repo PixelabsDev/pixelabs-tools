@@ -1,4 +1,3 @@
-const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const Papa = require('papaparse');
 
@@ -6,14 +5,12 @@ const html = fs.readFileSync('./tools/csv-json.html', 'utf8');
 const csvJsonJs = fs.readFileSync('./assets/js/tools/csv-json.js', 'utf8');
 
 describe('CSV ↔ JSON Converter', () => {
-  let dom;
-  let window;
-  let document;
+  const window = global.window;
+  const document = global.document;
 
   beforeEach(() => {
-    dom = new JSDOM(html, { runScripts: 'dangerously' });
-    window = dom.window;
-    document = window.document;
+    const parsedHtml = new DOMParser().parseFromString(html, 'text/html');
+    document.body.innerHTML = parsedHtml.body.innerHTML;
 
     // Polyfill dependencies for the script
     window.Papa = Papa;
@@ -34,9 +31,7 @@ describe('CSV ↔ JSON Converter', () => {
     // Polyfill URL.createObjectURL for blob
     window.URL.createObjectURL = jest.fn();
 
-    const scriptEl2 = document.createElement('script');
-    scriptEl2.textContent = csvJsonJs;
-    document.body.appendChild(scriptEl2);
+    window.eval(csvJsonJs);
   });
 
   describe('CSV -> JSON', () => {
