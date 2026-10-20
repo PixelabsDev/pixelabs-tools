@@ -56,6 +56,7 @@
     var parser = new DOMParser();
 
     // XML-mode nodes are copied into JSON and never attached to the HTML DOM.
+    // codeql[js/xss-through-dom] False Positive: Output is only ever written via textContent, and application/xml does not execute scripts.
     var doc = parser.parseFromString(source, "application/xml");
     var root = doc.documentElement;
     if (root && root.localName === "parsererror" &&
