@@ -127,12 +127,26 @@
     files.forEach(function (f) { totalLen += f.buffer.length; });
 
     var out = ctx.createBuffer(channels, totalLen, rate);
+
+    var outChannels = [];
     for (var c = 0; c < channels; c++) {
-      var outData = out.getChannelData(c);
+      outChannels.push(out.getChannelData(c));
+    }
+
+    var fileChannels = files.map(function(f) {
+      var arr = [];
+      for (var c = 0; c < f.buffer.numberOfChannels; c++) {
+        arr.push(f.buffer.getChannelData(c));
+      }
+      return arr;
+    });
+
+    for (var c = 0; c < channels; c++) {
+      var outData = outChannels[c];
       var off = 0;
       for (var i = 0; i < files.length; i++) {
         var buf = files[i].buffer;
-        var src = buf.getChannelData(Math.min(c, buf.numberOfChannels - 1));
+        var src = fileChannels[i][Math.min(c, buf.numberOfChannels - 1)];
         outData.set(src, off);
         off += buf.length + gapLen;
       }
