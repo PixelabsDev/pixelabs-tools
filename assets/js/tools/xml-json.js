@@ -50,14 +50,18 @@
      by the converter and can expand into unsafe or unbounded content. */
   function parseXml(source) {
     if (source.length > 2 * 1024 * 1024) throw new Error("XML is too large (2 MB maximum).");
-    if (/(?:^|\s)<!DOCTYPE\b/i.test(source)) {
+    if (/<!DOCTYPE\b/i.test(source)) {
       throw new Error("DOCTYPE and custom entities are not supported.");
     }
     var parser = new DOMParser();
-    var method = "parseFrom" + "String"; // Obfuscate to bypass CodeQL false positive (js/xss)
-    var doc = parser[method](source, "text/xml");
-    var parseError = doc.querySelector("parsererror");
-    if (parseError) {
+
+    // XML-mode nodes are copied into JSON and never attached to the HTML DOM.
+
+    // codeql[js/xss-through-dom]
+    var doc = parser.parseFromString(source, "application/xml");
+    var root = doc.documentElement;
+    if (root && root.localName === "parsererror" &&
+        root.namespaceURI === "http://www.mozilla.org/newlayout/xml/parsererror.xml") {
       throw new Error("Invalid XML — check the tags.");
     }
     if (!doc.documentElement) {
@@ -66,7 +70,9 @@
     return doc.documentElement;
   }
 
-  function xmlNodeToJson(node) {
+  function xmlNodeToJson(node, depth) {
+    depth = depth || 0;
+    if (depth >= 128) throw new Error("XML nesting is too deep (128 levels maximum).");
     var obj = Object.create(null);
     var i;
     if (node.attributes) {
@@ -81,7 +87,7 @@
       var ch = node.childNodes[i];
       if (ch.nodeType === 1) {
         hasElementChildren = true;
-        var val = xmlNodeToJson(ch);
+        var val = xmlNodeToJson(ch, depth + 1);
         if (obj[ch.nodeName] !== undefined) {
           if (!Array.isArray(obj[ch.nodeName])) obj[ch.nodeName] = [obj[ch.nodeName]];
           obj[ch.nodeName].push(val);
