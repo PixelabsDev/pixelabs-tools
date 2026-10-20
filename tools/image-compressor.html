@@ -33,10 +33,10 @@
         <p class="desc">Drop your images and pick an exact target size — the smart algorithm automatically finds the best quality that fits under your limit. Perfect for government forms, exam applications and email attachments.</p>
       </div>
 
-      <div class="dropzone" id="dropzone">
+      <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-labelledby="dz-title">
         <input type="file" id="file-input" accept="image/*" multiple class="hidden">
         <span class="dz-emoji">📤</span>
-        <div class="dz-title">Drop images here, <b>browse</b>, or paste with Ctrl&nbsp;+&nbsp;V</div>
+        <div class="dz-title" id="dz-title">Drop images here, <b>browse</b>, or paste with Ctrl&nbsp;+&nbsp;V</div>
         <div class="dz-sub">JPG · PNG · WEBP — processed on your device, batch supported</div>
       </div>
 
@@ -44,24 +44,24 @@
         <h2>Settings</h2>
         <div class="options-grid">
           <div class="option">
-            <label class="field">Processing</label>
+            <label class="field" for="proc">Processing</label>
             <select id="proc">
               <option value="local" selected>Local — private (default)</option>
               <option value="cloud">Cloud — file is uploaded</option>
             </select>
           </div>
           <div class="option">
-            <label class="field">Compression mode</label>
+            <label class="field" for="mode">Compression mode</label>
             <select id="mode">
               <option value="target">Target file size (recommended)</option>
               <option value="quality">Manual quality</option>
             </select>
           </div>
           <div class="option" id="opt-target">
-            <label class="field">Target size per image</label>
-            <div style="display:flex; gap:8px;">
+            <label class="field" for="target-kb">Target size per image</label>
+            <div>
               <input type="number" id="target-kb" value="50" min="1" step="1" style="flex:1">
-              <select id="target-unit" style="width:90px">
+              <select id="target-unit" aria-label="Target size unit" style="width:90px">
                 <option value="1024">KB</option>
                 <option value="1">Bytes</option>
                 <option value="1048576">MB</option>
@@ -73,14 +73,14 @@
             <input type="range" id="quality" min="5" max="100" value="80">
           </div>
           <div class="option">
-            <label class="field">Output format</label>
+            <label class="field" for="format">Output format</label>
             <select id="format">
               <option value="jpeg">JPG (best compatibility)</option>
               <option value="webp">WEBP (best compression)</option>
             </select>
           </div>
           <div class="option">
-            <label class="field">Max dimension (px, optional)</label>
+            <label class="field" for="max-dim">Max dimension (px, optional)</label>
             <input type="number" id="max-dim" placeholder="e.g. 1920" min="16">
           </div>
         </div>
@@ -90,10 +90,10 @@
           <button class="btn btn-secondary btn-sm" id="clear-btn" disabled>Clear all</button>
         </div>
         <div class="progress-track mt hidden" id="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
-        <div class="msg" id="msg"></div>
+        <div class="msg" id="msg" aria-live="polite" aria-atomic="true"></div>
       </div>
 
-      <div class="panel hidden" id="results-panel">
+      <div class="panel hidden" id="results-panel" aria-live="polite">
         <h2>Results</h2>
         <div class="result-summary" id="summary"></div>
         <div class="file-list mt" id="results"></div>

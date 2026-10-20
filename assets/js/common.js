@@ -230,7 +230,7 @@ function makeDropzone(opts) {
   el.setAttribute("role", "button");
   if (!el.getAttribute("aria-label")) {
     var titleEl = el.querySelector(".dz-title");
-    if (titleEl) el.setAttribute("aria-label", titleEl.textContent.trim());
+    if (titleEl) el.setAttribute("aria-label", el.textContent.trim().replace(/\s+/g, " "));
   }
 
   el.addEventListener("click", function (e) {
@@ -552,3 +552,68 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!ioFired) targets.forEach(function (el) { el.classList.add("in"); });
   }, 2500);
 })();
+
+/* Global keyboard accessibility for dropzones */
+document.addEventListener("DOMContentLoaded", function() {
+    var dropzones = document.querySelectorAll('.dropzone');
+    dropzones.forEach(function(dz) {
+        dz.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                var fileInput = dz.querySelector('input[type="file"]');
+                if (fileInput) {
+                    fileInput.click();
+                } else {
+                    dz.click();
+                }
+            }
+        });
+    });
+});
+
+
+/* Global message state handler (loading/empty/error states) */
+window.showMsg = function(msgText, isError, isBusy) {
+    var msgEl = document.getElementById('msg');
+    if (!msgEl) return;
+
+    // Clear previous state classes
+    msgEl.className = 'msg';
+
+    if (isError) {
+        msgEl.classList.add('error');
+        msgEl.style.color = 'var(--danger)';
+    } else {
+        msgEl.style.color = 'inherit';
+    }
+
+    if (isBusy) {
+        msgEl.classList.add('busy');
+        msgEl.setAttribute('aria-busy', 'true');
+    } else {
+        msgEl.removeAttribute('aria-busy');
+    }
+
+    msgEl.textContent = msgText || '';
+
+    // Announce to screen readers if it's an error
+    if (isError) {
+        var toastRoot = document.getElementById('toast-root');
+        if (toastRoot) toast(msgText);
+    }
+};
+
+/* Handle global clear button */
+document.addEventListener("DOMContentLoaded", function() {
+    var clearBtn = document.getElementById('clear-btn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            var msgEl = document.getElementById('msg');
+            if (msgEl) {
+                msgEl.className = 'msg';
+                msgEl.textContent = '';
+                msgEl.removeAttribute('aria-busy');
+            }
+        });
+    }
+});

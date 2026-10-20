@@ -37,8 +37,8 @@
       <div class="panel">
         <h2>Cron expression</h2>
         <div class="option">
-          <label class="field">5-field cron (minute · hour · day-of-month · month · day-of-week)</label>
-          <input type="text" id="cron" value="0 9 * * 1-5" spellcheck="false" style="font-family:var(--mono);">
+          <label class="field" for="cron">5-field cron (minute · hour · day-of-month · month · day-of-week)</label>
+            <input type="text" id="cron" value="0 9 * * 1-5" spellcheck="false" style="font-family:var(--mono);">
         </div>
         <div class="btn-row" id="presets">
           <button class="btn btn-secondary" data-cron="* * * * *">Every minute</button>
@@ -58,7 +58,7 @@
         <h2 style="margin-top:20px">Next 5 runs <span class="muted" style="font-size:.8rem; font-weight:400;">(your local time)</span></h2>
         <div id="next-runs"></div>
       </div>
-      <div class="msg" id="msg"></div>
+      <div class="msg" id="msg" aria-live="polite" aria-atomic="true"></div>
     </div>
   </main>
 

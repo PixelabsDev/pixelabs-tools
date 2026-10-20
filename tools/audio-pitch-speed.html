@@ -34,18 +34,18 @@
         <p class="desc">Speed up or slow down a song, or make a voice higher or lower — like a tape player. 100% in your browser.</p>
       </div>
 
-      <div class="dropzone" id="dropzone">
+      <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-labelledby="dz-title">
         <input type="file" id="file-input" accept="audio/*" class="hidden">
         <span class="dz-emoji">🎚️</span>
-        <div class="dz-title">Drop an audio file here, <b>browse</b>, or paste</div>
+        <div class="dz-title" id="dz-title">Drop an audio file here, <b>browse</b>, or paste</div>
         <div class="dz-sub">MP3 · WAV · OGG · M4A — never uploaded</div>
       </div>
 
       <div class="panel hidden" id="editor-panel">
         <h2>Change the sound</h2>
         <div class="option">
-          <label class="field">Processing</label>
-          <select id="proc">
+          <label class="field" for="proc">Processing</label>
+            <select id="proc">
             <option value="local" selected>Local — private (default)</option>
             <option value="cloud">Cloud — file is uploaded</option>
           </select>
@@ -53,7 +53,7 @@
         </div>
         <div class="options-grid">
           <div class="option">
-            <label class="field">Mode</label>
+            <label class="field" for="mode">Mode</label>
             <select id="mode">
               <option value="speed">Change speed (tape style)</option>
               <option value="pitch">Change pitch (tape style)</option>
@@ -69,7 +69,7 @@
           <button class="btn btn-secondary" id="preview-btn">▶ Preview result</button>
           <button class="btn btn-primary" id="export-btn">Download as WAV</button>
         </div>
-        <div class="msg" id="msg"></div>
+        <div class="msg" id="msg" aria-live="polite" aria-atomic="true"></div>
       </div>
     </div>
   </main>

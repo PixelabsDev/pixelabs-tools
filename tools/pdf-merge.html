@@ -34,18 +34,18 @@
         <p class="desc">Combine multiple PDF files into a single document, in the exact order you choose. Files stay on your device.</p>
       </div>
 
-      <div class="dropzone" id="dropzone">
+      <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-labelledby="dz-title">
         <input type="file" id="file-input" accept="application/pdf,.pdf" multiple class="hidden">
         <span class="dz-emoji">📑</span>
-        <div class="dz-title">Drop PDF files here or <b>browse</b></div>
+        <div class="dz-title" id="dz-title">Drop PDF files here or <b>browse</b></div>
         <div class="dz-sub">Two or more PDFs — arrange the order below</div>
       </div>
 
       <div class="panel mt">
         <h2>Documents <span class="muted" style="font-weight:400">(in merge order — use ↑ ↓ to arrange)</span></h2>
         <div class="option">
-          <label class="field">Processing</label>
-          <select id="proc">
+          <label class="field" for="proc">Processing</label>
+            <select id="proc">
             <option value="local" selected>Local — private (default)</option>
             <option value="cloud">Cloud — file is uploaded</option>
           </select>
@@ -56,7 +56,7 @@
           <button class="btn btn-primary" id="merge-btn" disabled>Merge PDFs</button>
           <button class="btn btn-secondary btn-sm" id="clear-btn" disabled>Clear all</button>
         </div>
-        <div class="msg" id="msg"></div>
+        <div class="msg" id="msg" aria-live="polite" aria-atomic="true"></div>
       </div>
 
     </div>

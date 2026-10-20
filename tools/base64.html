@@ -52,14 +52,14 @@
           </div>
         </div>
       </div>
-      <div class="msg" id="msg"></div>
+      <div class="msg" id="msg" aria-live="polite" aria-atomic="true"></div>
 
       <div class="panel mt">
         <h2>File → Base64</h2>
         <div class="dropzone" id="file-dropzone" style="padding: 26px;">
           <input type="file" id="file-input" class="hidden">
           <span class="dz-emoji">📄</span>
-          <div class="dz-title">Drop any file to get its <b>Base64 string</b></div>
+          <div class="dz-title" id="dz-title">Drop any file to get its <b>Base64 string</b></div>
           <div class="dz-sub">Nothing is uploaded — the file is read directly by your browser</div>
         </div>
         <div class="output-box hidden mt" id="file-output" style="min-height: 100px; max-height: 260px;"></div>

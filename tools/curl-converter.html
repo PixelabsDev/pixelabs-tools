@@ -42,7 +42,7 @@
         </div>
         <div class="options-grid">
           <div class="option">
-            <label class="field">Output language</label>
+            <label class="field" for="lang">Output language</label>
             <select id="lang">
               <option value="fetch" selected>JavaScript — fetch()</option>
               <option value="axios">JavaScript — Axios</option>
@@ -62,7 +62,7 @@
           <button class="btn btn-primary" id="copy-btn">Copy code</button>
         </div>
       </div>
-      <div class="msg" id="msg"></div>
+      <div class="msg" id="msg" aria-live="polite" aria-atomic="true"></div>
     </div>
   </main>
 

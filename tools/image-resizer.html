@@ -34,18 +34,18 @@
         <p class="desc">Resize images to exact pixel dimensions with presets for passport photos, signatures, and social media — 100% in your browser.</p>
       </div>
 
-      <div class="dropzone" id="dropzone">
+      <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-labelledby="dz-title">
         <input type="file" id="file-input" accept="image/*" class="hidden">
         <span class="dz-emoji">📐</span>
-        <div class="dz-title">Drop an image here or <b>browse</b></div>
+        <div class="dz-title" id="dz-title">Drop an image here or <b>browse</b></div>
         <div class="dz-sub">JPG · PNG · WEBP — single image, live preview</div>
       </div>
 
       <div class="panel mt hidden" id="editor">
         <h2>Resize</h2>
         <div class="option">
-          <label class="field">Processing</label>
-          <select id="proc">
+          <label class="field" for="proc">Processing</label>
+            <select id="proc">
             <option value="local" selected>Local — private (default)</option>
             <option value="cloud">Cloud — file is uploaded</option>
           </select>
@@ -53,7 +53,7 @@
         </div>
         <div class="options-grid">
           <div class="option">
-            <label class="field">Preset</label>
+            <label class="field" for="preset">Preset</label>
             <select id="preset">
               <option value="">Custom size</option>
               <optgroup label="Documents (India)">
@@ -75,18 +75,18 @@
             </select>
           </div>
           <div class="option">
-            <label class="field">Width (px)</label>
+            <label class="field" for="w">Width (px)</label>
             <input type="number" id="w" min="1">
           </div>
           <div class="option">
-            <label class="field">Height (px)</label>
+            <label class="field" for="h">Height (px)</label>
             <input type="number" id="h" min="1">
           </div>
           <div class="option" style="justify-content:flex-end;">
             <label class="check"><input type="checkbox" id="lock" checked> Lock aspect ratio</label>
           </div>
           <div class="option">
-            <label class="field">Output format</label>
+            <label class="field" for="format">Output format</label>
             <select id="format">
               <option value="">Keep original</option>
               <option value="jpeg">JPG</option>
