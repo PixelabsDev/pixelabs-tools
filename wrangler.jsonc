@@ -14,8 +14,7 @@
        implements has to be named — otherwise the request never reaches the
        Worker. Without "/api/*" the API routes fall through to the assets
        layer: a GET lands on the 404 page and a POST gets 405. */
-    "run_worker_first": ["/", "/about", "/status", "/api", "/api/*", "/__log",
-                        "/assets/vendor/*", "/assets/fonts/*"]
+    "run_worker_first": true
   },
   "observability": {
     "enabled": true
