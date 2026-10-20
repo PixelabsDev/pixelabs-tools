@@ -56,8 +56,6 @@
     var parser = new DOMParser();
 
     // XML-mode nodes are copied into JSON and never attached to the HTML DOM.
-
-    // lgtm[js/xss-through-dom]
     var doc = parser.parseFromString(source, "application/xml");
     var root = doc.documentElement;
     if (root && root.localName === "parsererror" &&
