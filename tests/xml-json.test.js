@@ -52,4 +52,17 @@ describe('XML parser', () => {
     expect(document.getElementById('x2j-out').value).toContain('<img src=x onerror=alert(1)>');
     expect(document.querySelector('img')).toBeNull();
   });
+
+  test('serializes nested values and arrays in their original order', () => {
+    document.getElementById('json-in').value = JSON.stringify({
+      root: { '@id': 'r', first: 'one', items: [1, 2], last: 'end' }
+    });
+    document.getElementById('j2x-btn').click();
+
+    const xml = document.getElementById('j2x-out').value;
+    expect(xml).toContain('<root id="r">');
+    expect(xml.indexOf('<first>')).toBeLessThan(xml.indexOf('<items>1</items>'));
+    expect(xml.indexOf('<items>2</items>')).toBeLessThan(xml.indexOf('<last>'));
+    expect(document.getElementById('msg2').textContent).toBe('Converted to XML.');
+  });
 });

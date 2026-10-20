@@ -142,34 +142,38 @@
   function jsonToXml(key, val, indent) {
     var pad = new Array(indent + 1).join("  ");
     var tag = safeTag(key);
-    var out = "";
     var attrs = "";
     var inner = "";
     var i;
 
     if (val !== null && typeof val === "object" && !Array.isArray(val)) {
       var keys = Object.keys(val);
+      var innerArr = [];
       for (i = 0; i < keys.length; i++) {
         var k = keys[i];
         if (k.charAt(0) === "@") {
           attrs += " " + safeTag(k.slice(1)) + '="' + esc(val[k]) + '"';
         } else {
-          inner += jsonToXml(k, val[k], indent + 1);
+          innerArr.push(jsonToXml(k, val[k], indent + 1));
         }
       }
+      inner = innerArr.join("");
     } else if (Array.isArray(val)) {
-      for (i = 0; i < val.length; i++) out += jsonToXml(key, val[i], indent);
-      return out;
+      if (val.length > 0) {
+        var outArr = [];
+        for (i = 0; i < val.length; i++) outArr.push(jsonToXml(key, val[i], indent));
+        return outArr.join("");
+      }
+      return "";
     } else {
       inner = esc(val);
     }
 
     if (inner.indexOf("\n") === -1 && inner.length < 70 && !/<[A-Za-z_]/.test(inner)) {
-      out += pad + "<" + tag + attrs + ">" + inner + "</" + tag + ">\n";
+      return pad + "<" + tag + attrs + ">" + inner + "</" + tag + ">\n";
     } else {
-      out += pad + "<" + tag + attrs + ">\n" + inner + pad + "</" + tag + ">\n";
+      return pad + "<" + tag + attrs + ">\n" + inner + pad + "</" + tag + ">\n";
     }
-    return out;
   }
 
   els.j2x.addEventListener("click", function () {
