@@ -305,9 +305,8 @@ function mdTokenize(html) {
   return toks;
 }
 
-/* Convert one HTML document to Markdown. */
-function htmlToMarkdown(html, base) {
-  /* ---- metadata (title / description / og:image) ---- */
+/* Extract metadata (title, description, og:image) from HTML string. */
+function extractMetadata(html) {
   const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || "";
   let metaDesc = "", ogTitle = "", ogDesc = "", ogImage = "";
   const metaRe = /<meta\b[^>]*>/gi;
@@ -321,18 +320,105 @@ function htmlToMarkdown(html, base) {
     else if (name === "og:description" && !ogDesc) ogDesc = content;
     else if (name === "og:image" && !ogImage) ogImage = content;
   }
+  return { title, metaDesc, ogTitle, ogDesc, ogImage };
+}
 
-  const toks = mdTokenize(html);
+/* Render a single HTML node to Markdown text. */
+function renderMarkdownNode(f, ctx) {
+  function clean(s) { return s.replace(/\s+/g, " ").trim(); }
+  function abs(u) {
+    u = mdDecodeEntities(String(u || ""));
+    if (!u || u.charAt(0) === "#") return u;
+    try { return new URL(u, ctx.base).toString(); } catch (err) { return u; }
+  }
+
+  let s = "";
+  switch (f.tag) {
+    case "h1": case "h2": case "h3": case "h4": case "h5": case "h6": {
+      const lvl = f.tag.charCodeAt(1) - 48;
+      const t = clean(f.buf);
+      s = t ? "\n\n" + new Array(lvl + 1).join("#") + " " + t + "\n\n" : "";
+      break;
+    }
+    case "p": {
+      const t = clean(f.buf);
+      s = t ? "\n\n" + t + "\n\n" : "";
+      break;
+    }
+    case "strong": case "b": {
+      const t = clean(f.buf);
+      s = t ? "**" + t + "**" : "";
+      break;
+    }
+    case "em": case "i": {
+      const t = clean(f.buf);
+      s = t ? "*" + t + "*" : "";
+      break;
+    }
+    case "a": {
+      const href = abs(f.attrs.href);
+      if (!href) { s = clean(f.buf); break; }
+      if (f.buf.indexOf("\n\n") !== -1) {
+        const parts = f.buf.split("\n\n");
+        const label = clean(parts.shift());
+        s = (label ? "[" + label + "](" + href + ")\n\n" : "") + parts.join("\n\n");
+      } else {
+        const t = clean(f.buf);
+        s = t ? "[" + t + "](" + href + ")" : "";
+      }
+      break;
+    }
+    case "code": {
+      if (ctx.preDepth > 0) {
+        s = f.buf; /* inside <pre> — raw text, no backticks */
+      } else {
+        const t = clean(f.buf);
+        s = t ? "`" + t + "`" : "";
+      }
+      break;
+    }
+    case "pre": {
+      const t = f.buf.replace(/\s+$/, "");
+      s = t ? "\n\n```\n" + t + "\n```\n\n" : "";
+      break;
+    }
+    case "li": {
+      let marker = "- ";
+      for (let k = ctx.stack.length - 1; k >= 0; k--) {
+        if (ctx.stack[k].tag === "ol" || ctx.stack[k].tag === "ul") {
+          if (ctx.stack[k].tag === "ol") {
+            ctx.stack[k].idx = (ctx.stack[k].idx || 0) + 1;
+            marker = ctx.stack[k].idx + ". ";
+          }
+          break;
+        }
+      }
+      const t = f.buf.replace(/^\s+|\s+$/g, "");
+      s = t ? "\n" + marker + t.replace(/\n/g, "\n  ") + "\n" : "";
+      break;
+    }
+    case "ul": case "ol": s = "\n\n"; break;
+    case "blockquote": {
+      const t = clean(f.buf);
+      s = t ? "\n\n" + t.split("\n").map(function (l) { return "> " + l; }).join("\n") + "\n\n" : "";
+      break;
+    }
+    default: s = f.buf; /* pass through */
+  }
+  return s;
+}
+
+/* Parse markdown tokens into markdown string array. */
+function parseTokens(toks, ctx) {
   const out = [];
   const stack = [];
   let skipDepth = 0;
   let preDepth = 0;
 
-  function clean(s) { return s.replace(/\s+/g, " ").trim(); }
   function abs(u) {
     u = mdDecodeEntities(String(u || ""));
     if (!u || u.charAt(0) === "#") return u;
-    try { return new URL(u, base).toString(); } catch (err) { return u; }
+    try { return new URL(u, ctx.base).toString(); } catch (err) { return u; }
   }
   function push(s) {
     if (stack.length) stack[stack.length - 1].buf += s;
@@ -341,82 +427,8 @@ function htmlToMarkdown(html, base) {
 
   function emit(f) {
     if (f.tag === "pre") preDepth--;
-    let s = "";
-    switch (f.tag) {
-      case "h1": case "h2": case "h3": case "h4": case "h5": case "h6": {
-        const lvl = f.tag.charCodeAt(1) - 48;
-        const t = clean(f.buf);
-        s = t ? "\n\n" + new Array(lvl + 1).join("#") + " " + t + "\n\n" : "";
-        break;
-      }
-      case "p": {
-        const t = clean(f.buf);
-        s = t ? "\n\n" + t + "\n\n" : "";
-        break;
-      }
-      case "strong": case "b": {
-        const t = clean(f.buf);
-        s = t ? "**" + t + "**" : "";
-        break;
-      }
-      case "em": case "i": {
-        const t = clean(f.buf);
-        s = t ? "*" + t + "*" : "";
-        break;
-      }
-      case "a": {
-        const href = abs(f.attrs.href);
-        if (!href) { s = clean(f.buf); break; }
-        if (f.buf.indexOf("\n\n") !== -1) {
-          /* link that wraps block content (e.g. homepage tool
-             cards): the leading inline text becomes the link,
-             the block children follow as normal markdown */
-          const parts = f.buf.split("\n\n");
-          const label = clean(parts.shift());
-          s = (label ? "[" + label + "](" + href + ")\n\n" : "") + parts.join("\n\n");
-        } else {
-          const t = clean(f.buf);
-          s = t ? "[" + t + "](" + href + ")" : "";
-        }
-        break;
-      }
-      case "code": {
-        if (preDepth > 0) {
-          s = f.buf; /* inside <pre> — raw text, no backticks */
-        } else {
-          const t = clean(f.buf);
-          s = t ? "`" + t + "`" : "";
-        }
-        break;
-      }
-      case "pre": {
-        const t = f.buf.replace(/\s+$/, "");
-        s = t ? "\n\n```\n" + t + "\n```\n\n" : "";
-        break;
-      }
-      case "li": {
-        let marker = "- ";
-        for (let k = stack.length - 1; k >= 0; k--) {
-          if (stack[k].tag === "ol" || stack[k].tag === "ul") {
-            if (stack[k].tag === "ol") {
-              stack[k].idx = (stack[k].idx || 0) + 1;
-              marker = stack[k].idx + ". ";
-            }
-            break;
-          }
-        }
-        const t = f.buf.replace(/^\s+|\s+$/g, "");
-        s = t ? "\n" + marker + t.replace(/\n/g, "\n  ") + "\n" : "";
-        break;
-      }
-      case "ul": case "ol": s = "\n\n"; break;
-      case "blockquote": {
-        const t = clean(f.buf);
-        s = t ? "\n\n" + t.split("\n").map(function (l) { return "> " + l; }).join("\n") + "\n\n" : "";
-        break;
-      }
-      default: s = f.buf; /* div, span, section, main … pass through */
-    }
+    const rCtx = { base: ctx.base, preDepth, stack };
+    const s = renderMarkdownNode(f, rCtx);
     if (s) push(s);
   }
 
@@ -456,7 +468,12 @@ function htmlToMarkdown(html, base) {
   }
   while (stack.length) emit(stack.pop());
 
-  let body = out.join("").replace(/[ \t]+\n/g, "\n");
+  return out;
+}
+
+/* Clean up markdown body: fix whitespace, indentation, code fences. */
+function formatMarkdownBody(outArray) {
+  let body = outArray.join("").replace(/[ \t]+\n/g, "\n");
 
   /* strip leading whitespace per line (source indentation), but
      never inside fenced code blocks */
@@ -466,20 +483,42 @@ function htmlToMarkdown(html, base) {
     if (bodyLines[li].slice(0, 3) === "```") { inFence = !inFence; continue; }
     if (!inFence) bodyLines[li] = bodyLines[li].replace(/^[ \t]+/, "");
   }
-  body = bodyLines.join("\n")
+  return bodyLines.join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/^\s+/, "");
+}
 
-  const fmTitle = clean(mdDecodeEntities(title || ogTitle));
-  const fmDesc = clean(mdDecodeEntities(metaDesc || ogDesc));
-  const fmImage = abs(ogImage);
+/* Build frontmatter block for Markdown string. */
+function buildMarkdownFrontmatter(meta, ctx) {
+  function clean(s) { return s.replace(/\s+/g, " ").trim(); }
+  function abs(u) {
+    u = mdDecodeEntities(String(u || ""));
+    if (!u || u.charAt(0) === "#") return u;
+    try { return new URL(u, ctx.base).toString(); } catch (err) { return u; }
+  }
+
+  const fmTitle = clean(mdDecodeEntities(meta.title || meta.ogTitle));
+  const fmDesc = clean(mdDecodeEntities(meta.metaDesc || meta.ogDesc));
+  const fmImage = abs(meta.ogImage);
   const lines = [];
   if (fmTitle) lines.push("title: " + fmTitle);
   if (fmDesc) lines.push("description: " + fmDesc);
   if (fmImage) lines.push("image: " + fmImage);
-
-  return (lines.length ? "---\n" + lines.join("\n") + "\n---\n\n" : "") + body + "\n";
+  return lines.length ? "---\n" + lines.join("\n") + "\n---\n\n" : "";
 }
+
+/* Convert one HTML document to Markdown. */
+function htmlToMarkdown(html, base) {
+  const meta = extractMetadata(html);
+  const toks = mdTokenize(html);
+  const out = parseTokens(toks, { base });
+
+  const body = formatMarkdownBody(out);
+  const frontmatter = buildMarkdownFrontmatter(meta, { base });
+
+  return frontmatter + body + "\n";
+}
+
 
 /* Serve a page as markdown, or return null to fall through to
    normal HTML serving. */
