@@ -268,19 +268,14 @@
     var i;
 
     if (val !== null && typeof val === "object" && !Array.isArray(val)) {
-      var clone = Object.create(null);
       var keys = Object.keys(val);
       for (i = 0; i < keys.length; i++) {
         var k = keys[i];
         if (k.charAt(0) === "@") {
           attrs += " " + safeTag(k.slice(1)) + '="' + esc(val[k]) + '"';
         } else {
-          clone[k] = val[k];
+          inner += jsonToXml(k, val[k], indent + 1);
         }
-      }
-      keys = Object.keys(clone);
-      for (i = 0; i < keys.length; i++) {
-        inner += jsonToXml(keys[i], clone[keys[i]], indent + 1);
       }
     } else if (Array.isArray(val)) {
       for (i = 0; i < val.length; i++) out += jsonToXml(key, val[i], indent);
