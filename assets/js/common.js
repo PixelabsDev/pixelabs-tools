@@ -614,7 +614,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
-<<<<<<< HEAD
 /* ---------- Shared UI Utilities ---------- */
 
 function renderFileRow(file, options) {
