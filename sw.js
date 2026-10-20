@@ -19,7 +19,7 @@
    ============================================================ */
 "use strict";
 
-var CACHE_VERSION = "pat-v69";
+var CACHE_VERSION = "pat-v70";
 
 /* Scope-relative path helper — prefixes paths with the service worker's
    scope. (Avoids new URL(), which would discard the scope's sub-path for
@@ -194,6 +194,10 @@ self.addEventListener("fetch", function (event) {
 
   var url = new URL(request.url);
   if (url.origin !== location.origin) return; /* never touch cross-origin */
+
+  /* API responses are never cached. They are dynamic, and serving a stale
+     /api/uptime or /api/health is worse than serving a slow one. */
+  if (url.pathname === "/api" || url.pathname.indexOf("/api/") === 0) return;
 
   var isNavigation = request.mode === "navigate";
 

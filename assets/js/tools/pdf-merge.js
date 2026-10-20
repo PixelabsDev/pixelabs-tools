@@ -111,6 +111,18 @@
     });
   }
 
+  /* A PDF can be "protected": an owner password set, or a permissions lock that
+     forbids copying or editing. Banks, textbooks and downloaded forms often ship
+     this way, and they open normally, so nothing looks wrong. pdf-lib cannot
+     decrypt one, and if it is told to ignore the encryption it will happily write
+     out a file that no viewer can open. So never pass ignoreEncryption here: let
+     the load fail and say so instead of handing back a broken file. */
+  var PROTECTED_MSG = 'A protected PDF cannot be rewritten in your browser. It carries an owner password or a permissions lock — which question banks, textbooks and downloaded forms often have. It opens normally, but rewriting it here would hand you back a file that will not open. Use Cloud mode instead: the server handles protected files properly, and the file is deleted as soon as the result comes back.';
+
+  function isProtected(err) {
+    return /encrypt/i.test(String((err && err.message) || err));
+  }
+
   async function localMerge() {
     if (files.length < 2) return;
     els.mergeBtn.disabled = true;
@@ -120,7 +132,13 @@
       var merged = await PDFDocument.create();
       for (var i = 0; i < files.length; i++) {
         var buf = await readFileAsArrayBuffer(files[i].file);
-        var src = await PDFDocument.load(buf, { ignoreEncryption: true });
+        var src;
+        try {
+          src = await PDFDocument.load(buf);
+        } catch (err) {
+          if (isProtected(err)) { showMsg(PROTECTED_MSG, "err"); els.mergeBtn.disabled = false; return; }
+          throw err;
+        }
         var pages = await merged.copyPages(src, src.getPageIndices());
         pages.forEach(function (p) { merged.addPage(p); });
       }

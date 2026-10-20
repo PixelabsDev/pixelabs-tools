@@ -47,14 +47,40 @@
     els.rangeWrap.style.visibility = extract ? "visible" : "hidden";
   });
 
+  /* A PDF can be "protected": an owner password set, or a permissions lock that
+     forbids copying or editing. Banks, textbooks and downloaded forms often ship
+     this way, and they open normally, so nothing looks wrong. pdf-lib cannot
+     decrypt one, and if it is told to ignore the encryption it will happily write
+     out a file that no viewer can open. So never pass ignoreEncryption here: let
+     the load fail and say so instead of handing back a broken file. */
+  var PROTECTED_MSG = 'A protected PDF cannot be rewritten in your browser. It carries an owner password or a permissions lock — which question banks, textbooks and downloaded forms often have. It opens normally, but rewriting it here would hand you back a file that will not open. Use Cloud mode instead: the server handles protected files properly, and the file is deleted as soon as the result comes back.';
+
+  function isProtected(err) {
+    return /encrypt/i.test(String((err && err.message) || err));
+  }
+
   function load(file) {
     if (!file || (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name))) {
       toast("Please choose a PDF file.", "err");
       return;
     }
     readFileAsArrayBuffer(file).then(async function (buf) {
-      var doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+      /* Remember the file before loading it: if it turns out to be protected,
+         Cloud mode can still do the job and it needs the file. */
       state.file = file;
+      var doc;
+      try {
+        doc = await PDFDocument.load(buf);
+      } catch (err) {
+        if (isProtected(err)) {
+          els.editor.classList.remove("hidden");
+          showMsg(PROTECTED_MSG, "err");
+          els.editor.scrollIntoView({ behavior: "smooth", block: "start" });
+          toast("This PDF is protected — see the note below.", "err");
+          return;
+        }
+        throw err;
+      }
       state.pageCount = doc.getPageCount();
       els.docInfo.innerHTML = "<b>" + escapeHtml(file.name) + "</b> — " + state.pageCount +
         " page" + (state.pageCount === 1 ? "" : "s") + " · " + formatBytes(file.size);
@@ -128,7 +154,13 @@
 
     try {
       var buf = await readFileAsArrayBuffer(state.file);
-      var src = await PDFDocument.load(buf, { ignoreEncryption: true });
+      var src;
+      try {
+        src = await PDFDocument.load(buf);
+      } catch (err) {
+        if (isProtected(err)) { showMsg(PROTECTED_MSG, "err"); els.runBtn.disabled = false; return; }
+        throw err;
+      }
 
       if (els.mode.value === "extract") {
         var indices = parseRange(els.range.value, state.pageCount);

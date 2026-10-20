@@ -738,6 +738,26 @@ export default {
 
     /* ---------- /api/moderate — content-moderation model ---------- */
     if (url.pathname === "/api/moderate") {
+      /* This route forwards a body to a service running on our own box, so it
+         gets the same guards as proxyToBackend: a method allow-list, a
+         same-origin check and a size cap. Without them it is a free relay. */
+      if (request.method !== "POST") {
+        return json({ ok: false, error: "method not allowed" }, 405);
+      }
+      const mOrigin = request.headers.get("origin");
+      if (mOrigin) {
+        try {
+          if (new URL(mOrigin).host !== url.host) {
+            return json({ ok: false, error: "cross-origin requests are not allowed" }, 403);
+          }
+        } catch (err) {
+          /* malformed origin — let the request through, as proxyToBackend does */
+        }
+      }
+      const mlen = parseInt(request.headers.get("content-length") || "0", 10);
+      if (mlen > 200000) {
+        return json({ ok: false, error: "text too large" }, 413);
+      }
       let base = (env && env.MODERATION_URL) || MODERATION_DEFAULT;
       while (base.length && base.slice(-1) === "/") base = base.slice(0, -1);
       const mHeaders = new Headers();
