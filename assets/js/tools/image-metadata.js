@@ -264,7 +264,11 @@
       var len = (b[i + 4] | (b[i + 5] << 8) | (b[i + 6] << 16) | (b[i + 7] << 24)) >>> 0;
       var padded = len + (len & 1);
       if (i + 8 + len > b.length) break;
-      if (fcc !== "EXIF" && fcc !== "XMP " && fcc !== "ICCP") {
+      if (fcc === "VP8X") {
+        var vp8x = new Uint8Array(b.subarray(i, i + 8 + padded));
+        vp8x[8] &= ~(0x20 | 0x08 | 0x04); /* unset ICCP, EXIF, XMP flags */
+        chunks.push(vp8x);
+      } else if (fcc !== "EXIF" && fcc !== "XMP " && fcc !== "ICCP") {
         chunks.push(b.subarray(i, i + 8 + padded));
       }
       i += 8 + padded;
