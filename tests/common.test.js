@@ -1,31 +1,29 @@
-const { escapeHtml } = require('../assets/js/common.js');
+const { escapeHtml, baseName } = require('../assets/js/common.js');
 
 describe('escapeHtml', () => {
-  it('should return empty string for falsy values', () => {
+  it('returns empty string for nullish values and stringifies other falsy values', () => {
     expect(escapeHtml('')).toBe('');
     expect(escapeHtml(null)).toBe('');
     expect(escapeHtml(undefined)).toBe('');
     expect(escapeHtml(false)).toBe('false');
     expect(escapeHtml(0)).toBe('0');
   });
-
-  it('should escape &', () => {
-    expect(escapeHtml('a & b')).toBe('a &amp; b');
-  });
-
-  it('should escape < and >', () => {
-    expect(escapeHtml('<div>')).toBe('&lt;div&gt;');
-  });
-
-  it('should escape "', () => {
-    expect(escapeHtml('class="test"')).toBe('class=&quot;test&quot;');
-  });
-
-  it('should escape \'', () => {
-    expect(escapeHtml("it's")).toBe("it&#039;s");
-  });
-
-  it('should escape multiple occurrences', () => {
+  it('escapes HTML metacharacters', () => {
     expect(escapeHtml('<a href="x&y">it\'s</a>')).toBe('&lt;a href=&quot;x&amp;y&quot;&gt;it&#039;s&lt;/a&gt;');
+  });
+});
+
+describe('baseName', () => {
+  test.each([
+    ['file.txt', 'file'],
+    ['archive.tar.gz', 'archive.tar'],
+    ['file', 'file'],
+    ['.gitignore', '.gitignore'],
+    ['/path/to/file.txt', 'file'],
+    ['path/to/file.txt', 'file'],
+    ['/path/to/file', 'file'],
+    ['C:\\path\\to\\file.txt', 'file'],
+  ])('returns the filename without its final extension for %s', (input, expected) => {
+    expect(baseName(input)).toBe(expected);
   });
 });
