@@ -159,9 +159,12 @@ function downloadBlob(blob, filename) {
   setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
 }
 
-function baseName(name) {
-  var i = name.lastIndexOf(".");
-  return i > 0 ? name.slice(0, i) : name;
+function baseName(str) {
+  var base = str.substring(Math.max(str.lastIndexOf('/'), str.lastIndexOf('\\')) + 1);
+  if (base.lastIndexOf(".") > 0) {
+    base = base.substring(0, base.lastIndexOf("."));
+  }
+  return base;
 }
 
 /* ---------- Toast ---------- */
@@ -611,6 +614,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
+<<<<<<< HEAD
 /* ---------- Shared UI Utilities ---------- */
 
 function renderFileRow(file, options) {
@@ -672,4 +676,4 @@ function renderFileRow(file, options) {
   return row;
 }
 
-if (typeof module !== 'undefined' && module.exports) { module.exports = { escapeHtml, formatBytes, renderFileRow }; }
+if (typeof module !== 'undefined' && module.exports) { module.exports = { escapeHtml, formatBytes, renderFileRow, baseName }; }
