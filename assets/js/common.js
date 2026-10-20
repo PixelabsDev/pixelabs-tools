@@ -672,4 +672,4 @@ function renderFileRow(file, options) {
   return row;
 }
 
-if (typeof module !== 'undefined' && module.exports) { module.exports = { escapeHtml, formatBytes }; }
+if (typeof module !== 'undefined' && module.exports) { module.exports = { escapeHtml, formatBytes, renderFileRow }; }
