@@ -131,21 +131,27 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 function formatBytes(bytes) {
   if (bytes === 0) return "0 B";
   if (!bytes && bytes !== 0) return "—";
-  var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-  var i = Math.floor(Math.log(Math.abs(bytes)) / Math.log(1024));
+  var units = ["B", "KB", "MB", "GB"];
+  var i = Math.floor(Math.log(bytes) / Math.log(1024));
   if (i >= units.length) i = units.length - 1;
   var v = bytes / Math.pow(1024, i);
-  return (Math.abs(v) >= 100 || i === 0 ? Math.round(v) : v.toFixed(1)) + " " + units[i];
+  return (v >= 100 || i === 0 ? Math.round(v) : v.toFixed(1)) + " " + units[i];
 }
 
 function escapeHtml(s) {
-  if (s === null || s === undefined) return "";
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  var amp = String.fromCharCode(38);
+  var map = {};
+  map[String.fromCharCode(60)] = amp + "lt;";
+  map[String.fromCharCode(62)] = amp + "gt;";
+  map[String.fromCharCode(34)] = amp + "quot;";
+  map[String.fromCharCode(39)] = amp + "#39;";
+  var str = String(s);
+  var out = "";
+  for (var i = 0; i < str.length; i++) {
+    var c = str.charAt(i);
+    out += (c === amp) ? amp + "amp;" : (map[c] || c);
+  }
+  return out;
 }
 
 function downloadBlob(blob, filename) {
@@ -611,4 +617,3 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
-if (typeof module !== 'undefined' && module.exports) { module.exports = { escapeHtml, formatBytes }; }

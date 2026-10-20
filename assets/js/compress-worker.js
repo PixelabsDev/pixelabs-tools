@@ -11,8 +11,8 @@ var MIME = {
   webp: "image/webp"
 };
 
-/* Render a bitmap at w x h into an OffscreenCanvas */
-function renderCanvas(bitmap, w, h, mime) {
+/* Render a bitmap at w x h into a compressed blob at given quality */
+function render(bitmap, w, h, mime, quality) {
   var canvas = new OffscreenCanvas(w, h);
   var ctx = canvas.getContext("2d");
   /* JPEG has no alpha: paint a white background first */
@@ -21,12 +21,6 @@ function renderCanvas(bitmap, w, h, mime) {
     ctx.fillRect(0, 0, w, h);
   }
   ctx.drawImage(bitmap, 0, 0, w, h);
-  return canvas;
-}
-
-/* Render a bitmap at w x h into a compressed blob at given quality */
-function render(bitmap, w, h, mime, quality) {
-  var canvas = renderCanvas(bitmap, w, h, mime);
   return canvas.convertToBlob({ type: mime, quality: quality });
 }
 
@@ -41,19 +35,17 @@ async function compressToTarget(bitmap, targetBytes, mime) {
   var w = bitmap.width, h = bitmap.height;
   var FLOOR = 0.45;    /* lowest "still looks good" quality */
   var MIN_EDGE = 500;  /* do not shrink below this long edge — text must stay readable */
-  var canvas;
 
   /* Stage 1: shrink 15% at a time until the target is reachable at
      FLOOR quality, then binary-search the best quality at that size. */
   while (true) {
-    canvas = renderCanvas(bitmap, w, h, mime);
-    var floorBlob = await canvas.convertToBlob({ type: mime, quality: FLOOR });
+    var floorBlob = await render(bitmap, w, h, mime, FLOOR);
     if (floorBlob.size <= targetBytes) {
       var lo = FLOOR, hi = 0.96;
       var best = floorBlob;
       for (var i = 0; i < 7; i++) {
         var q = (lo + hi) / 2;
-        var blob = await canvas.convertToBlob({ type: mime, quality: q });
+        var blob = await render(bitmap, w, h, mime, q);
         if (blob.size <= targetBytes) {
           best = blob;
           lo = q; /* try a higher quality */
@@ -71,10 +63,9 @@ async function compressToTarget(bitmap, targetBytes, mime) {
   /* Stage 2: already at the readability limit — let quality fall
      below the floor as a last resort (very small targets). */
   var lo2 = 0.01, hi2 = 0.96, best2 = null;
-  // reuse the last canvas since w, h haven't changed
   for (var j = 0; j < 8; j++) {
     var q2 = (lo2 + hi2) / 2;
-    var blob2 = await canvas.convertToBlob({ type: mime, quality: q2 });
+    var blob2 = await render(bitmap, w, h, mime, q2);
     if (blob2.size <= targetBytes) {
       best2 = blob2;
       lo2 = q2;
@@ -85,7 +76,7 @@ async function compressToTarget(bitmap, targetBytes, mime) {
   if (best2) return { blob: best2, size: best2.size, width: w, height: h };
 
   /* Could not reach target: return smallest possible */
-  var last = await canvas.convertToBlob({ type: mime, quality: 0.01 });
+  var last = await render(bitmap, w, h, mime, 0.01);
   return { blob: last, size: last.size, width: w, height: h };
 }
 
