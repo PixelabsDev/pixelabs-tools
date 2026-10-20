@@ -186,8 +186,14 @@
   }
 
   /* ---------- city labels (only when there is room) ---------- */
+  var textWidthCache = {};
+  var textWidthScale = null;
   function drawLabels(W, H, scale, p, when) {
     if (W / scale < 620) return;                   /* too tight on a phone */
+    if (textWidthScale !== scale) {
+      textWidthCache = {};
+      textWidthScale = scale;
+    }
     ctx.font = "600 " + Math.round(11 * scale) + "px system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
     ctx.textBaseline = "middle";
     ctx.lineJoin = "round";
@@ -206,7 +212,11 @@
     MARKERS.forEach(function (m) {
       var pt = project(m.lon, m.lat, W, H);
       var text = shortName(m.zone);
-      var tw = ctx.measureText(text).width;
+      var tw = textWidthCache[text];
+      if (tw === undefined) {
+        tw = ctx.measureText(text).width;
+        textWidthCache[text] = tw;
+      }
       var x = pt.x + 8 * scale, y = pt.y;
       var box = { x: x - 2 * scale, y: y - 9 * scale, w: tw + 4 * scale, h: 18 * scale };
       for (var k = 0; k < taken.length; k++) {
